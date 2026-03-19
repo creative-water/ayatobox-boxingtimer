@@ -1,0 +1,1576 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#e7e7e7">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="AYATOBOX">
+  <title>AYATOBOX - Boxing Timer</title>
+  <link rel="icon" type="image/png" href="assets/favicon.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png">
+  <link rel="manifest" href="manifest.json">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Oswald:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #e7e7e7;
+      --card: #f5f3f3;
+      --card-border: #e0dede;
+      --text: #2a2a2a;
+      --text-secondary: #888;
+      --text-muted: #bbb;
+      --red: #d42b2b;
+      --red-deep: #b71c1c;
+      --toggle-off: #b0a8a8;
+    }
+
+    html, body {
+      background: var(--bg);
+    }
+
+    html {
+      height: 100%;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: var(--text);
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      -webkit-user-select: none;
+      user-select: none;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* ===== Splash Screen ===== */
+    .splash-screen {
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      background: var(--bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+    }
+
+    .splash-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 24px;
+    }
+
+    .splash-logo {
+      display: block;
+      width: 380px;
+      max-width: 85vw;
+      height: auto;
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+
+    .splash-logo.fade-in {
+      animation: splash-fadein 1.0s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    .splash-illust {
+      display: block;
+      width: 320px;
+      max-width: 75vw;
+      height: auto;
+      opacity: 0;
+      transform: translateY(10px);
+    }
+
+    .splash-illust.fade-in {
+      animation: splash-fadein 1.0s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    @keyframes splash-fadein {
+      0%   { opacity: 0; transform: translateY(10px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Dissolve: illust fades out while splash bg fades to reveal settings */
+    .splash-screen.dissolve .splash-illust {
+      animation: dissolve-out 1.2s ease-in-out forwards;
+    }
+
+    .splash-screen.dissolve .splash-logo {
+      animation: dissolve-out 0.8s ease-in-out forwards;
+    }
+
+    .splash-screen.dissolve {
+      animation: splash-bg-fade 1.2s ease-in-out 0.3s forwards;
+    }
+
+    @keyframes dissolve-out {
+      0%   { opacity: 1; transform: scale(1) translateY(0); filter: blur(0); }
+      50%  { opacity: 0.6; transform: scale(1.02); filter: blur(2px); }
+      100% { opacity: 0; transform: scale(1.05); filter: blur(8px); }
+    }
+
+    @keyframes splash-bg-fade {
+      0%   { opacity: 1; }
+      100% { opacity: 0; pointer-events: none; }
+    }
+
+    .splash-screen.hidden {
+      display: none;
+    }
+
+    /* ===== Top accent bar ===== */
+    .top-bar {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      z-index: 50;
+      background: var(--red);
+    }
+
+    /* ===== Header ===== */
+    .header {
+      position: relative;
+      z-index: 2;
+      width: 100%;
+      padding: 20px 24px 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .logo-image {
+      display: block;
+      width: 420px;
+      max-width: 90vw;
+      height: auto;
+    }
+
+    /* Timer screen logo — round.png参考: 大きめロゴ */
+    .header-small .logo-image {
+      width: 380px;
+      max-width: 80vw;
+    }
+
+    .header-small {
+      padding: 10px 24px 4px;
+    }
+
+    /* ===== Layout ===== */
+    .app-layout {
+      position: relative;
+      z-index: 2;
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      max-width: 520px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* ===== Settings Screen ===== */
+    .settings-screen {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 10px;
+      padding: 8px 0;
+    }
+
+    .settings-screen.hidden {
+      display: none;
+    }
+
+    .settings-cards {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    /* Setting card */
+    .setting-card {
+      background: var(--card);
+      border-radius: 16px;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .setting-card-title {
+      font-family: 'Oswald', sans-serif;
+      font-size: 18px;
+      font-weight: 600;
+      letter-spacing: 2px;
+      color: var(--text);
+    }
+
+    .setting-card-control {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .sc-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      border: 1px solid var(--card-border);
+      background: var(--bg);
+      color: var(--text-secondary);
+      font-size: 22px;
+      font-weight: 400;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s ease;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .sc-btn:active { transform: scale(0.92); background: #ddd; }
+
+    .sc-value {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 36px;
+      min-width: 72px;
+      text-align: center;
+      color: var(--text);
+      letter-spacing: 2px;
+    }
+
+    /* Toggle card */
+    .toggle-card {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--card);
+      border-radius: 16px;
+      padding: 14px 20px;
+    }
+
+    .toggle-card-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .toggle-icon {
+      width: 24px;
+      height: 24px;
+      color: var(--text-secondary);
+      transition: color 0.3s ease;
+    }
+
+    .toggle-card-label {
+      font-family: 'Oswald', sans-serif;
+      font-size: 16px;
+      font-weight: 600;
+      letter-spacing: 2px;
+      color: var(--text);
+      transition: color 0.3s ease;
+    }
+
+    .toggle-card.active .toggle-card-label {
+      color: var(--red);
+    }
+
+    .toggle-card.active .toggle-icon {
+      color: var(--red);
+    }
+
+    .toggle-switch {
+      position: relative;
+      width: 50px;
+      height: 28px;
+      cursor: pointer;
+    }
+
+    .toggle-switch input {
+      position: absolute;
+      opacity: 0;
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      cursor: pointer;
+      z-index: 2;
+    }
+
+    .toggle-slider {
+      position: absolute;
+      inset: 0;
+      background: var(--toggle-off);
+      border-radius: 14px;
+      transition: 0.3s;
+      pointer-events: none;
+    }
+
+    .toggle-slider::before {
+      content: '';
+      position: absolute;
+      width: 22px;
+      height: 22px;
+      left: 3px;
+      bottom: 3px;
+      background: #fff;
+      border-radius: 50%;
+      transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .toggle-switch input:checked + .toggle-slider {
+      background: var(--red);
+    }
+
+    .toggle-switch input:checked + .toggle-slider::before {
+      transform: translateX(22px);
+    }
+
+    /* Start button */
+    .start-area {
+      padding: 12px 0 0;
+    }
+
+    .btn-start {
+      width: 100%;
+      height: 68px;
+      border: none;
+      border-radius: 16px;
+      background: var(--red);
+      color: #fff;
+      font-family: 'Oswald', sans-serif;
+      font-size: 28px;
+      font-weight: 600;
+      letter-spacing: 8px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .btn-start:active {
+      transform: scale(0.97);
+      background: var(--red-deep);
+    }
+
+    /* ===== Timer Screen (round.png参考レイアウト) ===== */
+    .timer-screen {
+      flex: 1;
+      min-height: 0;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+      padding: 0;
+    }
+
+    .timer-screen.active {
+      display: flex;
+    }
+
+    /* Fukidashi telop */
+    .fukidashi-area {
+      width: 100%;
+      height: 84px;
+      flex-shrink: 0;
+      pointer-events: none;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .fukidashi {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%) scale(0.5);
+      background: url('assets/fukidashi.png') no-repeat center top;
+      background-size: 100% 100%;
+      color: #1a1a1a;
+      font-family: 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', 'Yu Gothic', 'Meiryo', sans-serif;
+      font-weight: 900;
+      font-size: 28px;
+      min-width: 280px;
+      max-width: 88vw;
+      white-space: nowrap;
+      text-align: center;
+      opacity: 0;
+      transition: none;
+    }
+
+    .fukidashi span {
+      display: block;
+      padding: 28px 74px 52px 64px;
+    }
+
+    .fukidashi.show {
+      animation: fukidashi-in 0.3s cubic-bezier(0.2, 1.2, 0.4, 1) forwards,
+                 fukidashi-out 0.35s ease-in 2.0s forwards;
+    }
+
+    @keyframes fukidashi-in {
+      0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+      100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    }
+
+    @keyframes fukidashi-out {
+      0% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+      100% { opacity: 0; transform: translate(-50%, -50%) scale(0.8) translateY(-6px); }
+    }
+
+    /* Round info */
+    .timer-top-info {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0;
+      flex-shrink: 0;
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+
+    .status-pill {
+      font-family: 'Oswald', sans-serif;
+      font-size: 18px;
+      font-weight: 600;
+      letter-spacing: 6px;
+      color: var(--text);
+      transition: color 0.4s ease;
+    }
+
+    .status-pill.interval {
+      color: #4da6ff;
+    }
+
+    .round-display {
+      line-height: 1;
+      text-align: center;
+    }
+
+    .round-display-value {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 56px;
+      color: var(--red);
+    }
+
+    .round-display-total {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 32px;
+      color: var(--text-muted);
+    }
+
+    /* Timer ring — timer.png参考: 太めリング + ドロップシャドウ浮遊感 */
+    .timer-ring-wrap {
+      position: relative;
+      width: 300px;
+      height: 300px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin: 12px 0;
+    }
+
+    .timer-svg {
+      position: absolute;
+      inset: 0;
+    }
+
+    .ring-bg {
+      fill: none;
+      stroke: #d8d8d8;
+      stroke-width: 18;
+    }
+
+    .ring-progress {
+      fill: none;
+      stroke: url(#ringGradient);
+      stroke-width: 18;
+      stroke-linecap: round;
+      transform: rotate(-90deg);
+      transform-origin: center;
+      transition: stroke-dashoffset 0.4s linear;
+    }
+
+    .ring-progress.interval {
+      stroke: #4da6ff;
+    }
+
+    .timer-digits {
+      position: relative;
+      z-index: 1;
+      font-family: 'Inter', sans-serif;
+      font-weight: 300;
+      font-size: 48px;
+      letter-spacing: 2px;
+      font-variant-numeric: tabular-nums;
+      color: #444;
+      line-height: 1;
+    }
+
+    .timer-digits.warning {
+      color: var(--red);
+      animation: digit-pulse 0.5s ease-in-out infinite;
+    }
+
+    @keyframes digit-pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+
+    /* Controls */
+    .timer-controls {
+      display: flex;
+      gap: 28px;
+      align-items: center;
+      flex-shrink: 0;
+      margin-top: 10px;
+    }
+
+    .ctrl-btn {
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s ease;
+    }
+
+    .ctrl-btn-main {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: transparent;
+      padding: 0;
+      overflow: hidden;
+    }
+
+    .ctrl-btn-main img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .ctrl-btn-main:active { transform: scale(0.93); }
+
+    .ctrl-btn-side {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: transparent;
+      padding: 0;
+      overflow: hidden;
+    }
+
+    .ctrl-btn-side img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .ctrl-btn-side:active {
+      transform: scale(0.93);
+    }
+
+    /* ===== Finished Overlay ===== */
+    .finished-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 20px;
+      background: rgba(0,0,0,0.85);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+    }
+
+    .finished-overlay.show { display: flex; }
+
+    .finished-badge {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 72px;
+      letter-spacing: 12px;
+      color: #fff;
+      line-height: 1;
+    }
+
+    .finished-sub {
+      font-family: 'Oswald', sans-serif;
+      font-size: 14px;
+      letter-spacing: 6px;
+      color: rgba(255,255,255,0.6);
+    }
+
+    .finished-btn {
+      margin-top: 16px;
+      padding: 14px 48px;
+      border-radius: 12px;
+      background: var(--red);
+      color: #fff;
+      border: none;
+      font-family: 'Oswald', sans-serif;
+      font-size: 16px;
+      font-weight: 600;
+      letter-spacing: 4px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .finished-btn:active { transform: scale(0.96); }
+
+    /* ===== Footer ===== */
+    .footer {
+      position: relative;
+      z-index: 2;
+      padding: 12px;
+      flex-shrink: 0;
+      text-align: center;
+      font-family: 'Oswald', sans-serif;
+      font-size: 12px;
+      color: var(--text-secondary);
+      letter-spacing: 3px;
+    }
+
+    /* ===== Intro Animations (body.introのみ) ===== */
+    body.intro .header .logo-image {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+
+    body.intro .header .logo-image.anim-in {
+      animation: logo-fadein 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    @keyframes logo-fadein {
+      0%   { opacity: 0; transform: translateY(-10px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+
+    body.intro .settings-cards > * {
+      opacity: 0;
+      transform: perspective(600px) rotateX(-12deg) translateY(20px);
+    }
+
+    body.intro .settings-cards > .anim-in {
+      animation: card-tilt-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    @keyframes card-tilt-in {
+      0%   { opacity: 0; transform: perspective(600px) rotateX(-12deg) translateY(20px); }
+      60%  { opacity: 1; transform: perspective(600px) rotateX(3deg) translateY(-2px); }
+      100% { opacity: 1; transform: perspective(600px) rotateX(0deg) translateY(0); }
+    }
+
+    body.intro .start-area {
+      opacity: 0;
+      transform: translateY(16px);
+    }
+
+    body.intro .start-area.anim-in {
+      animation: start-fadein 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    @keyframes start-fadein {
+      0%   { opacity: 0; transform: translateY(16px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ===== Responsive ===== */
+    @media (max-width: 380px) {
+      .logo-image { width: 260px; }
+      .setting-card { padding: 12px 16px; }
+      .setting-card-title { font-size: 15px; }
+      .sc-value { font-size: 28px; min-width: 56px; }
+      .sc-btn { width: 34px; height: 34px; }
+      .toggle-card { padding: 10px 16px; }
+      .btn-start { height: 56px; font-size: 22px; }
+      .timer-ring-wrap { width: 240px; height: 240px; }
+      .timer-digits { font-size: 40px; }
+      .round-display-value { font-size: 42px; }
+      .round-display-total { font-size: 24px; }
+      .fukidashi { font-size: 22px; min-width: 240px; max-width: 85vw; }
+      .fukidashi span { padding: 22px 46px 44px 36px; }
+      .fukidashi-area { height: 68px; }
+    }
+
+    @media (max-height: 700px) {
+      .header { padding: 12px 24px 6px; }
+      .logo-image { width: 280px; }
+      .settings-screen { gap: 6px; }
+      .settings-cards { gap: 6px; }
+      .setting-card { padding: 10px 16px; }
+      .toggle-card { padding: 8px 16px; }
+      .start-area { padding: 8px 0 0; }
+      .btn-start { height: 52px; font-size: 22px; }
+      .timer-ring-wrap { width: 240px; height: 240px; margin: 6px 0; }
+      .timer-digits { font-size: 40px; }
+      .footer { padding: 6px; font-size: 10px; }
+      .fukidashi-area { height: 64px; }
+      .fukidashi { font-size: 22px; min-width: 240px; max-width: 85vw; }
+      .fukidashi span { padding: 20px 46px 42px 36px; }
+      .header-small .logo-image { width: 280px; }
+      .header-small { padding: 8px 24px 2px; }
+      .round-display-value { font-size: 42px; }
+      .round-display-total { font-size: 24px; }
+      .timer-top-info { margin-bottom: 2px; }
+      .timer-controls { margin-top: 4px; }
+      .ctrl-btn-main { width: 66px; height: 66px; }
+      .ctrl-btn-side { width: 54px; height: 54px; }
+    }
+
+    @media (min-height: 800px) {
+      .settings-cards { gap: 12px; }
+      .timer-ring-wrap { width: 320px; height: 320px; margin: 14px 0; }
+      .timer-digits { font-size: 56px; }
+      .fukidashi-area { height: 90px; }
+      .fukidashi { font-size: 30px; min-width: 320px; max-width: 88vw; }
+      .fukidashi span { padding: 30px 66px 54px 56px; }
+      .timer-top-info { margin-bottom: 6px; }
+      .timer-controls { margin-top: 14px; }
+      .round-display-value { font-size: 60px; }
+      .round-display-total { font-size: 34px; }
+      .ctrl-btn-main { width: 84px; height: 84px; }
+      .ctrl-btn-side { width: 68px; height: 68px; }
+    }
+
+    @media (min-height: 900px) {
+      .header { padding: 28px 24px 16px; }
+      .timer-ring-wrap { width: 340px; height: 340px; margin: 18px 0; }
+      .timer-digits { font-size: 62px; }
+      .logo-image { width: 400px; }
+      .header-small .logo-image { width: 360px; }
+      .round-display-value { font-size: 66px; }
+      .round-display-total { font-size: 36px; }
+      .fukidashi { font-size: 32px; min-width: 340px; max-width: 88vw; }
+      .fukidashi span { padding: 32px 70px 62px 60px; }
+      .fukidashi-area { height: 100px; }
+      .timer-top-info { margin-bottom: 8px; }
+      .timer-controls { margin-top: 18px; }
+      .ctrl-btn-main { width: 88px; height: 88px; }
+      .ctrl-btn-side { width: 72px; height: 72px; }
+    }
+  </style>
+</head>
+<body class="intro">
+
+  <!-- ===== SPLASH SCREEN ===== -->
+  <div class="splash-screen" id="splashScreen">
+    <div class="splash-content">
+      <img src="assets/logo.png" alt="AYATOBOX" class="splash-logo">
+      <img src="assets/illust.png" alt="" class="splash-illust">
+    </div>
+  </div>
+
+  <div class="top-bar"></div>
+
+  <header class="header" id="header">
+    <img src="assets/logo.png" alt="AYATOBOX" class="logo-image">
+  </header>
+
+  <div class="app-layout">
+
+    <!-- ===== SETTINGS SCREEN ===== -->
+    <div class="settings-screen" id="settingsScreen">
+      <div class="settings-cards">
+
+        <div class="setting-card">
+          <div class="setting-card-title">ROUND TIME</div>
+          <div class="setting-card-control">
+            <button class="sc-btn" data-target="roundTime" data-delta="-30">&minus;</button>
+            <span class="sc-value" id="roundTimeDisplay">3:00</span>
+            <button class="sc-btn" data-target="roundTime" data-delta="30">+</button>
+          </div>
+        </div>
+
+        <div class="setting-card">
+          <div class="setting-card-title">INTERVAL</div>
+          <div class="setting-card-control">
+            <button class="sc-btn" data-target="intervalTime" data-delta="-10">&minus;</button>
+            <span class="sc-value" id="intervalTimeDisplay">1:00</span>
+            <button class="sc-btn" data-target="intervalTime" data-delta="10">+</button>
+          </div>
+        </div>
+
+        <div class="setting-card">
+          <div class="setting-card-title">ROUNDS</div>
+          <div class="setting-card-control">
+            <button class="sc-btn" data-target="rounds" data-delta="-1">&minus;</button>
+            <span class="sc-value" id="roundsDisplay">3</span>
+            <button class="sc-btn" data-target="rounds" data-delta="1">+</button>
+          </div>
+        </div>
+
+        <div class="toggle-card">
+          <div class="toggle-card-left">
+            <svg class="toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+              <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+              <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+            </svg>
+            <span class="toggle-card-label">SOUND</span>
+          </div>
+          <div class="toggle-switch">
+            <input type="checkbox" id="soundToggle" checked>
+            <span class="toggle-slider"></span>
+          </div>
+        </div>
+
+        <div class="toggle-card">
+          <div class="toggle-card-left">
+            <svg class="toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+              <line x1="12" y1="19" x2="12" y2="23"></line>
+              <line x1="8" y1="23" x2="16" y2="23"></line>
+            </svg>
+            <span class="toggle-card-label">CHEER</span>
+          </div>
+          <div class="toggle-switch">
+            <input type="checkbox" id="cheerToggle">
+            <span class="toggle-slider"></span>
+          </div>
+        </div>
+
+        <div class="toggle-card">
+          <div class="toggle-card-left">
+            <svg class="toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="5.5" cy="17.5" r="2.5"></circle>
+              <circle cx="17.5" cy="15.5" r="2.5"></circle>
+              <path d="M8 17V5l12-2v12"></path>
+            </svg>
+            <span class="toggle-card-label">BGM</span>
+          </div>
+          <div class="toggle-switch">
+            <input type="checkbox" id="bgmToggle">
+            <span class="toggle-slider"></span>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="start-area">
+        <button class="btn-start" id="btnStart">START</button>
+      </div>
+    </div>
+
+    <!-- ===== TIMER SCREEN ===== -->
+    <div class="timer-screen" id="timerScreen">
+
+      <!-- Fukidashi telop -->
+      <div class="fukidashi-area" id="fukidashiArea">
+        <div class="fukidashi" id="fukidashiBubble">
+          <span id="fukidashiText"></span>
+        </div>
+      </div>
+
+      <!-- Round info -->
+      <div class="timer-top-info">
+        <div class="status-pill" id="statusPill">ROUND</div>
+        <div class="round-display">
+          <span class="round-display-value" id="currentRound">1</span>
+          <span class="round-display-total">/<span id="totalRounds">3</span></span>
+        </div>
+      </div>
+
+      <!-- Timer ring -->
+      <div class="timer-ring-wrap">
+        <svg class="timer-svg" viewBox="0 0 280 280" overflow="visible">
+          <defs>
+            <linearGradient id="ringGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#c040c8" />
+              <stop offset="100%" stop-color="#e84890" />
+            </linearGradient>
+            <filter id="ringShadow" x="-30%" y="-20%" width="160%" height="180%">
+              <feDropShadow dx="0" dy="6" stdDeviation="6" flood-color="rgba(0,0,0,0.25)" />
+              <feDropShadow dx="0" dy="16" stdDeviation="15" flood-color="rgba(0,0,0,0.12)" />
+            </filter>
+          </defs>
+          <g filter="url(#ringShadow)">
+            <circle class="ring-bg" cx="140" cy="140" r="124" />
+            <circle class="ring-progress" id="ringProgress" cx="140" cy="140" r="124"
+              stroke-dasharray="779.42"
+              stroke-dashoffset="0" />
+          </g>
+        </svg>
+        <div class="timer-digits" id="timerDigits">3:00</div>
+      </div>
+
+      <!-- Controls -->
+      <div class="timer-controls">
+        <button class="ctrl-btn ctrl-btn-side" id="btnReset" title="RESET">
+          <img src="assets/backbutton.png" alt="RESET">
+        </button>
+        <button class="ctrl-btn ctrl-btn-main" id="btnPause">
+          <img src="assets/stopbutton.png" alt="STOP" id="btnPauseImg">
+        </button>
+        <button class="ctrl-btn ctrl-btn-side" id="btnSkip" title="SKIP">
+          <img src="assets/skipbutton.png" alt="SKIP">
+        </button>
+      </div>
+
+    </div>
+
+  </div>
+
+  <footer class="footer">&copy; AYATOBOX</footer>
+
+  <!-- Finished Overlay -->
+  <div class="finished-overlay" id="finishedOverlay">
+    <div class="finished-badge">FINISHED</div>
+    <div class="finished-sub">GREAT WORK</div>
+    <button class="finished-btn" id="btnFinishedClose">OK</button>
+  </div>
+
+  <script>
+    // ===== Voice Manager (m4a file playback, pre-loaded for mobile) =====
+    const VoiceManager = (() => {
+      // 全音声ファイルを事前ロード（iOS Safari対策）
+      const allFiles = [
+        'round01.m4a','round02.m4a','round03.m4a','round04.m4a',
+        'round05.m4a','round06.m4a','round07.m4a','round08.m4a',
+        'round09.m4a','round10.m4a','round11.m4a','round12.m4a',
+        'time-1min.m4a','time-half.m4a','time-last1min.m4a','time-last5sec.m4a',
+        'interval.m4a','finish.m4a','fight.m4a',
+        'cheer-iiyo.m4a','cheer-ikeike.m4a','cheer-sokoda.m4a',
+        'cheer-sonochoushi.m4a','cheer-nice.m4a','cheer-madaikeru.m4a',
+        'cheer-shuchu.m4a','cheer-shuchushite.m4a',
+      ];
+      const cache = {};
+      allFiles.forEach(f => {
+        const a = new Audio('assets/voice/' + f);
+        a.preload = 'auto';
+        cache[f] = a;
+      });
+
+      // iOS Safari: AudioContextアンロック（無音で解除）
+      let unlocked = false;
+      function unlockAudio() {
+        if (unlocked) return;
+        unlocked = true;
+        // Web Audio APIで無音を再生してオーディオセッションを有効化
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const buf = ctx.createBuffer(1, 1, 22050);
+        const src = ctx.createBufferSource();
+        src.buffer = buf;
+        src.connect(ctx.destination);
+        src.start(0);
+        // 全Audioのloadを発火
+        allFiles.forEach(f => { cache[f].load(); });
+        document.removeEventListener('touchstart', unlockAudio, true);
+        document.removeEventListener('click', unlockAudio, true);
+      }
+      document.addEventListener('touchstart', unlockAudio, true);
+      document.addEventListener('click', unlockAudio, true);
+
+      // sound用とcheer用で独立チャンネル
+      let currentSound = null;
+      let currentCheer = null;
+
+      function play(filename) {
+        if (currentSound) {
+          currentSound.pause();
+          currentSound.currentTime = 0;
+        }
+        const a = cache[filename];
+        if (!a) return;
+        a.currentTime = 0;
+        a.play().catch(() => {});
+        currentSound = a;
+      }
+
+      function playCheer(filename) {
+        if (currentCheer) {
+          currentCheer.pause();
+          currentCheer.currentTime = 0;
+        }
+        const a = cache[filename];
+        if (!a) return;
+        a.currentTime = 0;
+        a.play().catch(() => {});
+        currentCheer = a;
+      }
+
+      function stop() {
+        if (currentSound) {
+          currentSound.pause();
+          currentSound.currentTime = 0;
+          currentSound = null;
+        }
+        if (currentCheer) {
+          currentCheer.pause();
+          currentCheer.currentTime = 0;
+          currentCheer = null;
+        }
+      }
+
+      return { play, playCheer, stop };
+    })();
+
+    // ===== Sound Manager =====
+    const SoundManager = (() => {
+      const startGong = new Audio('assets/gong-start.mp3');
+      const endGong = new Audio('assets/gong-end.mp3');
+      startGong.preload = 'auto';
+      endGong.preload = 'auto';
+
+      let ctx = null;
+      function getCtx() {
+        if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
+        if (ctx.state === 'suspended') ctx.resume();
+        return ctx;
+      }
+
+      function playAudio(audio) {
+        audio.currentTime = 0;
+        audio.play().catch(() => {});
+      }
+
+      return {
+        gong() { playAudio(startGong); },
+        endGong() { playAudio(endGong); },
+        countdown() {
+          const c = getCtx();
+          const t = c.currentTime;
+          const osc = c.createOscillator();
+          const g = c.createGain();
+          osc.type = 'sine';
+          osc.frequency.value = 1000;
+          g.gain.setValueAtTime(0.15, t);
+          g.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
+          osc.connect(g);
+          g.connect(c.destination);
+          osc.start(t);
+          osc.stop(t + 0.1);
+        },
+      };
+    })();
+
+    // ===== BGM Manager =====
+    const BGMManager = (() => {
+      const tracks = [
+        new Audio('assets/bgm/bgm-01.mp3'),
+        new Audio('assets/bgm/bgm-02.mp3'),
+      ];
+      tracks.forEach(t => { t.preload = 'auto'; });
+
+      let enabled = false;
+      let currentIndex = 0;
+      let isPlaying = false;
+
+      tracks.forEach((track, i) => {
+        track.addEventListener('ended', () => {
+          if (!enabled || !isPlaying) return;
+          currentIndex = (i + 1) % tracks.length;
+          tracks[currentIndex].currentTime = 0;
+          tracks[currentIndex].play().catch(() => {});
+        });
+      });
+
+      function play() {
+        if (!enabled) return;
+        isPlaying = true;
+        currentIndex = 0;
+        tracks[0].currentTime = 0;
+        tracks[0].play().catch(() => {});
+      }
+
+      function pause() {
+        if (!isPlaying) return;
+        tracks[currentIndex].pause();
+      }
+
+      function resume() {
+        if (!enabled || !isPlaying) return;
+        tracks[currentIndex].play().catch(() => {});
+      }
+
+      function stop() {
+        isPlaying = false;
+        tracks.forEach(t => { t.pause(); t.currentTime = 0; });
+        currentIndex = 0;
+      }
+
+      function setEnabled(val) {
+        enabled = val;
+        if (!val) stop();
+      }
+
+      return { play, pause, resume, stop, setEnabled, isEnabled: () => enabled };
+    })();
+
+    // ===== Fukidashi =====
+    const fukidashiBubble = document.getElementById('fukidashiBubble');
+    const fukidashiTextEl = document.getElementById('fukidashiText');
+    let fukidashiTimer = null;
+
+    function showFukidashi(text) {
+      clearTimeout(fukidashiTimer);
+      fukidashiBubble.classList.remove('show');
+      fukidashiTextEl.textContent = text;
+      void fukidashiBubble.offsetWidth;
+      fukidashiBubble.classList.add('show');
+      fukidashiTimer = setTimeout(() => {
+        fukidashiBubble.classList.remove('show');
+      }, 2600);
+    }
+
+    // ===== App =====
+    const app = (() => {
+      let roundTime = 180;
+      let intervalTime = 60;
+      let totalRoundsCount = 3;
+      let currentRound = 0;
+      let timeRemaining = 0;
+      let phase = 'ready';
+      let isRunning = false;
+      let timerInterval = null;
+      let soundEnabled = true;
+      let cheerEnabled = false;
+
+      let oneMinuteFired = false;
+      let halfTimeFired = false;
+      let lastMinuteFired = false;
+      let countdownStarted = false;
+
+      const cheerPhrases = [
+        { text: 'いいよ！', file: 'cheer-iiyo.m4a' },
+        { text: 'イケイケイケイケイケ！', file: 'cheer-ikeike.m4a' },
+        { text: 'そこだー！もっと！', file: 'cheer-sokoda.m4a' },
+        { text: 'その調子！', file: 'cheer-sonochoushi.m4a' },
+        { text: 'ナイスー！', file: 'cheer-nice.m4a' },
+        { text: 'まだいける！諦めるな！', file: 'cheer-madaikeru.m4a' },
+        { text: '集中！', file: 'cheer-shuchu.m4a' },
+        { text: '集中して！', file: 'cheer-shuchushite.m4a' },
+      ];
+      let nextCheerTime = 0;
+      let lastCheerIndex = -1;
+
+      function scheduleNextCheer() {
+        nextCheerTime = Math.floor(Math.random() * 13) + 8;
+      }
+
+      function doCheer() {
+        let idx;
+        do {
+          idx = Math.floor(Math.random() * cheerPhrases.length);
+        } while (idx === lastCheerIndex && cheerPhrases.length > 1);
+        lastCheerIndex = idx;
+        const phrase = cheerPhrases[idx];
+        VoiceManager.playCheer(phrase.file);
+        showFukidashi(phrase.text);
+        scheduleNextCheer();
+      }
+
+      const CIRCUMFERENCE = 2 * Math.PI * 124;
+
+      const settingsScreen = document.getElementById('settingsScreen');
+      const timerScreen = document.getElementById('timerScreen');
+      const statusPill = document.getElementById('statusPill');
+      const roundEl = document.getElementById('currentRound');
+      const totalEl = document.getElementById('totalRounds');
+      const digitsEl = document.getElementById('timerDigits');
+      const progressEl = document.getElementById('ringProgress');
+      const btnPause = document.getElementById('btnPause');
+      const btnPauseImg = document.getElementById('btnPauseImg');
+
+      function fmt(sec) {
+        const m = String(Math.floor(sec / 60)).padStart(2, '0');
+        const s = String(sec % 60).padStart(2, '0');
+        return m + ':' + s;
+      }
+
+      const headerEl = document.getElementById('header');
+
+      function showSettings() {
+        settingsScreen.classList.remove('hidden');
+        timerScreen.classList.remove('active');
+        headerEl.classList.remove('header-small');
+      }
+
+      function showTimer() {
+        settingsScreen.classList.add('hidden');
+        timerScreen.classList.add('active');
+        headerEl.classList.add('header-small');
+      }
+
+      function updateSettingsDisplay() {
+        document.getElementById('roundTimeDisplay').textContent = fmt(roundTime);
+        document.getElementById('intervalTimeDisplay').textContent = fmt(intervalTime);
+        document.getElementById('roundsDisplay').textContent = totalRoundsCount;
+      }
+
+      function updateTimerDisplay() {
+        digitsEl.textContent = fmt(timeRemaining);
+        roundEl.textContent = currentRound;
+        totalEl.textContent = totalRoundsCount;
+
+        statusPill.textContent = phase === 'round' ? 'ROUND' : phase === 'interval' ? 'REST' : 'READY';
+        statusPill.className = 'status-pill' + (phase === 'interval' ? ' interval' : '');
+
+        const total = phase === 'round' ? roundTime : phase === 'interval' ? intervalTime : roundTime;
+        const progress = total > 0 ? timeRemaining / total : 0;
+        progressEl.style.strokeDashoffset = CIRCUMFERENCE * (1 - progress);
+        progressEl.className = 'ring-progress' + (phase === 'interval' ? ' interval' : '');
+
+        if (phase === 'round' && timeRemaining <= 5 && timeRemaining > 0 && isRunning) {
+          digitsEl.classList.add('warning');
+        } else {
+          digitsEl.classList.remove('warning');
+        }
+
+        // STOP/GO ボタン画像切り替え
+        btnPauseImg.src = isRunning ? 'assets/stopbutton.png' : 'assets/go.png';
+        btnPauseImg.alt = isRunning ? 'STOP' : 'GO';
+      }
+
+      function resetFlags() {
+        oneMinuteFired = false;
+        halfTimeFired = false;
+        lastMinuteFired = false;
+        countdownStarted = false;
+        scheduleNextCheer();
+      }
+
+      // ラウンドコール用m4aファイル（1〜12）
+      const roundVoiceFiles = {
+        1: 'round01.m4a',
+        2: 'round02.m4a',
+        3: 'round03.m4a',
+        4: 'round04.m4a',
+        5: 'round05.m4a',
+        6: 'round06.m4a',
+        7: 'round07.m4a',
+        8: 'round08.m4a',
+        9: 'round09.m4a',
+        10: 'round10.m4a',
+        11: 'round11.m4a',
+        12: 'round12.m4a',
+      };
+
+      function announceRound(num) {
+        const file = roundVoiceFiles[num];
+        if (file) {
+          VoiceManager.play(file);
+        }
+      }
+
+      function tick() {
+        if (!isRunning) return;
+        timeRemaining--;
+
+        if (phase === 'round') {
+          const elapsed = roundTime - timeRemaining;
+
+          if (elapsed === 60 && !oneMinuteFired && roundTime > 90) {
+            if (soundEnabled) VoiceManager.play('time-1min.m4a');
+            showFukidashi('1分経過');
+            oneMinuteFired = true;
+          }
+
+          const half = Math.floor(roundTime / 2);
+          if (elapsed === half && !halfTimeFired && roundTime >= 60 && half !== 60) {
+            if (soundEnabled) VoiceManager.play('time-half.m4a');
+            showFukidashi('ハーフタイム');
+            halfTimeFired = true;
+          }
+
+          if (timeRemaining === 60 && !lastMinuteFired && roundTime > 120 && timeRemaining !== half) {
+            if (soundEnabled) VoiceManager.play('time-last1min.m4a');
+            showFukidashi('ラスト1分');
+            lastMinuteFired = true;
+          }
+
+          if (timeRemaining === 5 && !countdownStarted) {
+            if (soundEnabled) VoiceManager.play('time-last5sec.m4a');
+            showFukidashi('ラスト5秒');
+            countdownStarted = true;
+          }
+
+          if (soundEnabled && timeRemaining <= 5 && timeRemaining > 0) {
+            SoundManager.countdown();
+          }
+
+          if (cheerEnabled && timeRemaining > 6) {
+            nextCheerTime--;
+            if (nextCheerTime <= 0) {
+              const justNotified = (elapsed === 60 && roundTime > 90)
+                                || (elapsed === half && roundTime >= 60)
+                                || (timeRemaining === 60 && roundTime > 120)
+                                || (timeRemaining === 5);
+              if (!justNotified) {
+                doCheer();
+              } else {
+                scheduleNextCheer();
+              }
+            }
+          }
+        }
+
+        if (timeRemaining <= 0) {
+          if (phase === 'round') {
+            if (soundEnabled) SoundManager.endGong();
+
+            if (currentRound >= totalRoundsCount) {
+              phase = 'finished';
+              isRunning = false;
+              clearInterval(timerInterval);
+              timerInterval = null;
+              if (soundEnabled) {
+                setTimeout(() => VoiceManager.play('finish.m4a'), 1500);
+              }
+              setTimeout(() => showFukidashi('終了！お疲れ'), 1500);
+              BGMManager.stop();
+              document.getElementById('finishedOverlay').classList.add('show');
+              updateTimerDisplay();
+              return;
+            }
+
+            phase = 'interval';
+            timeRemaining = intervalTime;
+            resetFlags();
+            if (soundEnabled) {
+              setTimeout(() => VoiceManager.play('interval.m4a'), 1000);
+            }
+            setTimeout(() => showFukidashi('インターバル'), 1000);
+          } else if (phase === 'interval') {
+            currentRound++;
+            phase = 'round';
+            timeRemaining = roundTime;
+            resetFlags();
+            if (soundEnabled) {
+              SoundManager.gong();
+              setTimeout(() => announceRound(currentRound), 800);
+            }
+            setTimeout(() => showFukidashi('ラウンド' + currentRound + 'ファイト'), 800);
+          }
+        }
+
+        updateTimerDisplay();
+      }
+
+      function start() {
+        currentRound = 1;
+        phase = 'round';
+        timeRemaining = roundTime;
+        isRunning = true;
+        resetFlags();
+        showTimer();
+
+        if (soundEnabled) {
+          SoundManager.gong();
+          setTimeout(() => announceRound(1), 800);
+        }
+        setTimeout(() => showFukidashi('ラウンド1ファイト'), 800);
+
+        BGMManager.play();
+        timerInterval = setInterval(tick, 1000);
+        updateTimerDisplay();
+      }
+
+      function pause() {
+        isRunning = false;
+        clearInterval(timerInterval);
+        timerInterval = null;
+        BGMManager.pause();
+        updateTimerDisplay();
+      }
+
+      function resume() {
+        isRunning = true;
+        BGMManager.resume();
+        timerInterval = setInterval(tick, 1000);
+        updateTimerDisplay();
+      }
+
+      function reset() {
+        isRunning = false;
+        clearInterval(timerInterval);
+        timerInterval = null;
+        BGMManager.stop();
+        phase = 'ready';
+        currentRound = 0;
+        resetFlags();
+        VoiceManager.stop();
+        showSettings();
+      }
+
+      function skip() {
+        if (phase === 'round') {
+          if (currentRound >= totalRoundsCount) {
+            phase = 'finished';
+            isRunning = false;
+            clearInterval(timerInterval);
+            timerInterval = null;
+            timeRemaining = 0;
+            BGMManager.stop();
+            document.getElementById('finishedOverlay').classList.add('show');
+            if (soundEnabled) SoundManager.endGong();
+          } else {
+            phase = 'interval';
+            timeRemaining = intervalTime;
+            resetFlags();
+            if (soundEnabled) SoundManager.endGong();
+          }
+        } else if (phase === 'interval') {
+          currentRound++;
+          phase = 'round';
+          timeRemaining = roundTime;
+          resetFlags();
+          if (soundEnabled) {
+            SoundManager.gong();
+            setTimeout(() => announceRound(currentRound), 600);
+          }
+        }
+        updateTimerDisplay();
+      }
+
+      // Events
+      document.getElementById('btnStart').addEventListener('click', start);
+      btnPause.addEventListener('click', () => { isRunning ? pause() : resume(); });
+      document.getElementById('btnReset').addEventListener('click', reset);
+      document.getElementById('btnSkip').addEventListener('click', skip);
+
+      const soundToggleEl = document.getElementById('soundToggle');
+      const cheerToggleEl = document.getElementById('cheerToggle');
+      const bgmToggleEl = document.getElementById('bgmToggle');
+
+      function updateToggleStyle(inputEl) {
+        const card = inputEl.closest('.toggle-card');
+        if (inputEl.checked) {
+          card.classList.add('active');
+        } else {
+          card.classList.remove('active');
+        }
+      }
+
+      soundToggleEl.addEventListener('change', (e) => {
+        soundEnabled = e.target.checked;
+        if (!soundEnabled) VoiceManager.stop();
+        updateToggleStyle(e.target);
+      });
+
+      cheerToggleEl.addEventListener('change', (e) => {
+        cheerEnabled = e.target.checked;
+        if (cheerEnabled) scheduleNextCheer();
+        updateToggleStyle(e.target);
+      });
+
+      bgmToggleEl.addEventListener('change', (e) => {
+        BGMManager.setEnabled(e.target.checked);
+        updateToggleStyle(e.target);
+      });
+
+      // 初期状態を反映
+      updateToggleStyle(soundToggleEl);
+      updateToggleStyle(cheerToggleEl);
+      updateToggleStyle(bgmToggleEl);
+
+      document.getElementById('btnFinishedClose').addEventListener('click', () => {
+        document.getElementById('finishedOverlay').classList.remove('show');
+        reset();
+      });
+
+      document.querySelectorAll('.sc-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const target = btn.dataset.target;
+          const delta = parseInt(btn.dataset.delta);
+          if (target === 'roundTime') roundTime = Math.max(30, Math.min(600, roundTime + delta));
+          else if (target === 'intervalTime') intervalTime = Math.max(10, Math.min(300, intervalTime + delta));
+          else if (target === 'rounds') totalRoundsCount = Math.max(1, Math.min(12, totalRoundsCount + delta));
+          updateSettingsDisplay();
+        });
+      });
+
+      document.addEventListener('keydown', (e) => {
+        if (e.code === 'Space') {
+          e.preventDefault();
+          if (phase === 'ready') start();
+          else if (isRunning) pause();
+          else resume();
+        } else if (e.code === 'KeyR') {
+          reset();
+        } else if (e.code === 'ArrowRight') {
+          if (phase !== 'ready') skip();
+        }
+      });
+
+      updateSettingsDisplay();
+    })();
+
+    // ===== Intro Animation (Splash → Settings) =====
+    (() => {
+      const splashScreen = document.getElementById('splashScreen');
+      const splashLogo = splashScreen.querySelector('.splash-logo');
+      const splashIllust = splashScreen.querySelector('.splash-illust');
+
+      const headerLogo = document.querySelector('.header .logo-image');
+      const cards = document.querySelectorAll('.settings-cards > *');
+      const startArea = document.querySelector('.start-area');
+
+      // Step 1: タイトルロゴ フェードイン (0.3s後)
+      setTimeout(() => {
+        splashLogo.classList.add('fade-in');
+      }, 300);
+
+      // Step 2: illust.png フェードイン (1.0s後)
+      setTimeout(() => {
+        splashIllust.classList.add('fade-in');
+      }, 1000);
+
+      // Step 3: 少し見せてから、ディゾルブ開始 (3.0s後)
+      setTimeout(() => {
+        splashScreen.classList.add('dissolve');
+      }, 3000);
+
+      // Step 4: ディゾルブ中に設定画面のイントロアニメ開始
+      const settingsStart = 3400;
+
+      // ヘッダーロゴ フェードイン
+      setTimeout(() => {
+        headerLogo.classList.add('anim-in');
+      }, settingsStart);
+
+      // 設定カード: 上から順にチルトイン
+      cards.forEach((card, i) => {
+        setTimeout(() => {
+          card.classList.add('anim-in');
+        }, settingsStart + 300 + i * 100);
+      });
+
+      // STARTボタン: 最後にフェードイン
+      const startDelay = settingsStart + 300 + cards.length * 100 + 100;
+      setTimeout(() => {
+        startArea.classList.add('anim-in');
+      }, startDelay);
+
+      // Step 5: スプラッシュ完全に非表示 & introクラス削除
+      setTimeout(() => {
+        splashScreen.classList.add('hidden');
+      }, 4500);
+
+      setTimeout(() => {
+        document.body.classList.remove('intro');
+      }, startDelay + 600);
+    })();
+  </script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js');
+    }
+  </script>
+</body>
+</html>
