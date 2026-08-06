@@ -958,16 +958,15 @@
 
       // HTMLの音声要素を「ユーザー操作中にミュートで一度再生→即停止」して
       // 以降プログラムから自由に再生できるようにする（iOSの自動再生ロック解除）
+      // ※ミュートはここでは戻さない。実際に鳴らす瞬間（play/playCheer）で外す。
+      //   解除中にミュートを戻すと、その瞬間に音が漏れることがあるため。
       function primeAudio(a) {
-        const wasMuted = a.muted;
         a.muted = true;
         const p = a.play();
         if (p && p.then) {
-          p.then(() => { a.pause(); a.currentTime = 0; a.muted = wasMuted; })
-           .catch(() => { a.muted = wasMuted; });
+          p.then(() => { a.pause(); a.currentTime = 0; }).catch(() => {});
         } else {
           try { a.pause(); a.currentTime = 0; } catch (e) {}
-          a.muted = wasMuted;
         }
       }
 
@@ -1007,6 +1006,7 @@
         }
         const a = cache[filename];
         if (!a) return;
+        a.muted = false;  // 解除時にミュートしたままなので、鳴らす瞬間に外す
         a.currentTime = 0;
         a.play().catch(() => {});
         currentSound = a;
@@ -1019,6 +1019,7 @@
         }
         const a = cache[filename];
         if (!a) return;
+        a.muted = false;  // 解除時にミュートしたままなので、鳴らす瞬間に外す
         a.currentTime = 0;
         a.play().catch(() => {});
         currentCheer = a;
@@ -1055,21 +1056,19 @@
       }
 
       function playAudio(audio) {
+        audio.muted = false;  // 解除時にミュートしたままなので、鳴らす瞬間に外す
         audio.currentTime = 0;
         audio.play().catch(() => {});
       }
 
-      // ユーザー操作中にゴングをミュート再生→即停止して解除しておく
+      // ユーザー操作中にゴングをミュート再生→即停止して解除しておく（ミュートは戻さない）
       function primeEl(a) {
-        const wasMuted = a.muted;
         a.muted = true;
         const p = a.play();
         if (p && p.then) {
-          p.then(() => { a.pause(); a.currentTime = 0; a.muted = wasMuted; })
-           .catch(() => { a.muted = wasMuted; });
+          p.then(() => { a.pause(); a.currentTime = 0; }).catch(() => {});
         } else {
           try { a.pause(); a.currentTime = 0; } catch (e) {}
-          a.muted = wasMuted;
         }
       }
 
@@ -1114,6 +1113,7 @@
         track.addEventListener('ended', () => {
           if (!enabled || !isPlaying) return;
           currentIndex = (i + 1) % tracks.length;
+          tracks[currentIndex].muted = false;
           tracks[currentIndex].currentTime = 0;
           tracks[currentIndex].play().catch(() => {});
         });
@@ -1123,6 +1123,7 @@
         if (!enabled) return;
         isPlaying = true;
         currentIndex = 0;
+        tracks[0].muted = false;  // 解除時にミュートしたままなので、鳴らす瞬間に外す
         tracks[0].currentTime = 0;
         tracks[0].play().catch(() => {});
       }
@@ -1134,6 +1135,7 @@
 
       function resume() {
         if (!enabled || !isPlaying) return;
+        tracks[currentIndex].muted = false;
         tracks[currentIndex].play().catch(() => {});
       }
 
@@ -1148,18 +1150,15 @@
         if (!val) stop();
       }
 
-      // ユーザー操作中にBGMをミュート再生→即停止して解除しておく
+      // ユーザー操作中にBGMをミュート再生→即停止して解除しておく（ミュートは戻さない）
       function prime() {
         tracks.forEach(t => {
-          const wasMuted = t.muted;
           t.muted = true;
           const p = t.play();
           if (p && p.then) {
-            p.then(() => { t.pause(); t.currentTime = 0; t.muted = wasMuted; })
-             .catch(() => { t.muted = wasMuted; });
+            p.then(() => { t.pause(); t.currentTime = 0; }).catch(() => {});
           } else {
             try { t.pause(); t.currentTime = 0; } catch (e) {}
-            t.muted = wasMuted;
           }
         });
       }
