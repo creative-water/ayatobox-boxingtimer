@@ -956,20 +956,40 @@
         cache[f] = a;
       });
 
-      // iOS Safari: AudioContextアンロック（無音で解除）
+      // HTMLの音声要素を「ユーザー操作中にミュートで一度再生→即停止」して
+      // 以降プログラムから自由に再生できるようにする（iOSの自動再生ロック解除）
+      function primeAudio(a) {
+        const wasMuted = a.muted;
+        a.muted = true;
+        const p = a.play();
+        if (p && p.then) {
+          p.then(() => { a.pause(); a.currentTime = 0; a.muted = wasMuted; })
+           .catch(() => { a.muted = wasMuted; });
+        } else {
+          try { a.pause(); a.currentTime = 0; } catch (e) {}
+          a.muted = wasMuted;
+        }
+      }
+
+      // iOS Safari: 最初のタップ/クリックで全オーディオを解除
       let unlocked = false;
       function unlockAudio() {
         if (unlocked) return;
         unlocked = true;
-        // Web Audio APIで無音を再生してオーディオセッションを有効化
-        const ctx = new (window.AudioContext || window.webkitAudioContext)();
-        const buf = ctx.createBuffer(1, 1, 22050);
-        const src = ctx.createBufferSource();
-        src.buffer = buf;
-        src.connect(ctx.destination);
-        src.start(0);
-        // 全Audioのloadを発火
-        allFiles.forEach(f => { cache[f].load(); });
+        // Web Audioの無音再生でオーディオセッションを有効化
+        try {
+          const ctx = new (window.AudioContext || window.webkitAudioContext)();
+          const buf = ctx.createBuffer(1, 1, 22050);
+          const src = ctx.createBufferSource();
+          src.buffer = buf;
+          src.connect(ctx.destination);
+          src.start(0);
+        } catch (e) {}
+        // 全ボイスをプライミング（ミュート再生→即停止）
+        allFiles.forEach(f => primeAudio(cache[f]));
+        // ゴング・BGMも同じ操作の中で解除しておく
+        if (typeof SoundManager !== 'undefined' && SoundManager.prime) SoundManager.prime();
+        if (typeof BGMManager !== 'undefined' && BGMManager.prime) BGMManager.prime();
         document.removeEventListener('touchstart', unlockAudio, true);
         document.removeEventListener('click', unlockAudio, true);
       }
@@ -1039,7 +1059,26 @@
         audio.play().catch(() => {});
       }
 
+      // ユーザー操作中にゴングをミュート再生→即停止して解除しておく
+      function primeEl(a) {
+        const wasMuted = a.muted;
+        a.muted = true;
+        const p = a.play();
+        if (p && p.then) {
+          p.then(() => { a.pause(); a.currentTime = 0; a.muted = wasMuted; })
+           .catch(() => { a.muted = wasMuted; });
+        } else {
+          try { a.pause(); a.currentTime = 0; } catch (e) {}
+          a.muted = wasMuted;
+        }
+      }
+
       return {
+        prime() {
+          primeEl(startGong);
+          primeEl(endGong);
+          try { getCtx(); } catch (e) {}  // カウントダウン音のAudioContextも操作中に有効化
+        },
         gong() { playAudio(startGong); },
         endGong() { playAudio(endGong); },
         countdown() {
@@ -1109,7 +1148,23 @@
         if (!val) stop();
       }
 
-      return { play, pause, resume, stop, setEnabled, isEnabled: () => enabled };
+      // ユーザー操作中にBGMをミュート再生→即停止して解除しておく
+      function prime() {
+        tracks.forEach(t => {
+          const wasMuted = t.muted;
+          t.muted = true;
+          const p = t.play();
+          if (p && p.then) {
+            p.then(() => { t.pause(); t.currentTime = 0; t.muted = wasMuted; })
+             .catch(() => { t.muted = wasMuted; });
+          } else {
+            try { t.pause(); t.currentTime = 0; } catch (e) {}
+            t.muted = wasMuted;
+          }
+        });
+      }
+
+      return { play, pause, resume, stop, setEnabled, prime, isEnabled: () => enabled };
     })();
 
     // ===== Fukidashi =====
