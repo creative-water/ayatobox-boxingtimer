@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ayatobox-v15';
+const CACHE_NAME = 'ayatobox-v16';
 
 const ASSETS_TO_CACHE = [
   './',
@@ -76,28 +76,46 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// キャッシュ優先、なければネットワーク
+// HTML と manifest.json はネットワーク優先（修正がすぐ端末に届くように）
+// それ以外（画像・音声）はキャッシュ優先のまま（起動の速さとオフライン利用を維持）
+const isNetworkFirst = (request) => {
+  if (request.mode === 'navigate' || request.destination === 'document') return true;
+  return new URL(request.url).pathname.endsWith('/manifest.json');
+};
+
+const putInCache = (request, response) => {
+  if (response.status === 200) {
+    const responseClone = response.clone();
+    caches.open(CACHE_NAME).then((cache) => cache.put(request, responseClone));
+  }
+  return response;
+};
+
 self.addEventListener('fetch', (event) => {
+  const request = event.request;
+
   // Google Fonts などの外部リソースはネットワーク優先
-  if (!event.request.url.startsWith(self.location.origin)) {
+  if (!request.url.startsWith(self.location.origin)) {
     event.respondWith(
-      fetch(event.request).catch(() => caches.match(event.request))
+      fetch(request).catch(() => caches.match(request))
     );
     return;
   }
 
+  // ネットワーク優先（オフライン時のみキャッシュにフォールバック）
+  if (isNetworkFirst(request)) {
+    event.respondWith(
+      fetch(request)
+        .then((response) => putInCache(request, response))
+        .catch(() => caches.match(request).then((cached) => cached || caches.match('./index.html')))
+    );
+    return;
+  }
+
+  // キャッシュ優先、なければネットワーク
   event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      return cachedResponse || fetch(event.request).then((response) => {
-        // 成功したレスポンスをキャッシュに追加
-        if (response.status === 200) {
-          const responseClone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseClone);
-          });
-        }
-        return response;
-      });
+    caches.match(request).then((cachedResponse) => {
+      return cachedResponse || fetch(request).then((response) => putInCache(request, response));
     })
   );
 });
