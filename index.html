@@ -47,6 +47,14 @@
       user-select: none;
       overflow: hidden;
       position: relative;
+      /* iOSのダブルタップ拡大を無効化（±ボタン連打で画面が拡大するのを防ぐ）。
+         ピンチ操作による拡大は従来どおり使える */
+      touch-action: manipulation;
+    }
+
+    /* 一部のWebKitはbodyの指定だけでは効かないため、操作要素にも個別に指定する */
+    button, input, .toggle-switch, .wt-row {
+      touch-action: manipulation;
     }
 
     /* ===== Splash Screen ===== */
