@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ayatobox-v16';
+const CACHE_NAME = 'ayatobox-v17';
 
 const ASSETS_TO_CACHE = [
   './',

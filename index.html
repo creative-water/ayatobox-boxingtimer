@@ -364,6 +364,213 @@
       background: var(--red-deep);
     }
 
+    /* ===== Weight Class ===== */
+    .btn-weight {
+      width: 100%;
+      height: 44px;
+      margin-top: 8px;
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      background: var(--card);
+      color: var(--text-secondary);
+      font-family: 'Oswald', sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: 3px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.15s ease;
+    }
+
+    .btn-weight:active { transform: scale(0.97); background: #ddd; }
+    .btn-weight svg { width: 17px; height: 17px; flex-shrink: 0; }
+
+    .weight-screen {
+      flex: 1;
+      min-height: 0;
+      display: none;
+      flex-direction: column;
+      gap: 10px;
+      padding: 8px 0 4px;
+    }
+
+    .weight-screen.active { display: flex; }
+
+    .weight-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+
+    .weight-head-title {
+      font-family: 'Oswald', sans-serif;
+      font-size: 18px;
+      font-weight: 600;
+      letter-spacing: 3px;
+      color: var(--text);
+    }
+
+    .wc-back {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      border: 1px solid var(--card-border);
+      background: var(--card);
+      color: var(--text-secondary);
+      font-size: 20px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s ease;
+    }
+
+    .wc-back:active { transform: scale(0.92); background: #ddd; }
+    .wc-head-spacer { width: 40px; flex-shrink: 0; }
+
+    .weight-input-card {
+      background: var(--card);
+      border-radius: 16px;
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+
+    .weight-input-wrap {
+      display: flex;
+      align-items: baseline;
+      gap: 4px;
+    }
+
+    .weight-input {
+      width: 90px;
+      border: none;
+      background: transparent;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 36px;
+      letter-spacing: 2px;
+      color: var(--text);
+      text-align: center;
+      padding: 0;
+      -webkit-user-select: text;
+      user-select: text;
+    }
+
+    .weight-input:focus { outline: none; color: var(--red); }
+
+    .weight-unit {
+      font-family: 'Oswald', sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+
+    .weight-result {
+      background: var(--red);
+      border-radius: 16px;
+      padding: 16px 20px;
+      color: #fff;
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    .wr-label {
+      font-family: 'Oswald', sans-serif;
+      font-size: 11px;
+      letter-spacing: 3px;
+      opacity: 0.75;
+    }
+
+    .wr-name {
+      font-size: 27px;
+      font-weight: 800;
+      line-height: 1.2;
+      margin-top: 3px;
+    }
+
+    .wr-en {
+      font-family: 'Oswald', sans-serif;
+      font-size: 11px;
+      letter-spacing: 2px;
+      opacity: 0.8;
+      margin-top: 3px;
+    }
+
+    .wr-meta {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid rgba(255, 255, 255, 0.25);
+      font-size: 12.5px;
+      line-height: 1.8;
+    }
+
+    .wr-meta b {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 18px;
+      font-weight: 400;
+      letter-spacing: 1px;
+    }
+
+    .weight-table-wrap {
+      position: relative; /* 行の offsetTop の基準にする（無いと body 基準になりスクロール位置がずれる） */
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      background: var(--card);
+      border-radius: 16px;
+      padding: 4px 0;
+    }
+
+    .wt-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 8px 18px;
+      font-size: 14px;
+      color: var(--text);
+    }
+
+    .wt-row + .wt-row { border-top: 1px solid var(--card-border); }
+
+    .wt-row.current {
+      background: rgba(212, 43, 43, 0.08);
+      color: var(--red);
+      font-weight: 700;
+    }
+
+    .wt-limit {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 17px;
+      letter-spacing: 1px;
+      color: var(--text-secondary);
+      white-space: nowrap;
+    }
+
+    .wt-row.current .wt-limit { color: var(--red); }
+
+    .weight-note {
+      font-size: 10.5px;
+      color: var(--text-muted);
+      text-align: center;
+      line-height: 1.6;
+      flex-shrink: 0;
+    }
+
+    @media (max-height: 740px) {
+      .weight-input-card { padding: 10px 16px; }
+      .weight-result { padding: 12px 16px; }
+      .wr-name { font-size: 23px; }
+      .wt-row { padding: 7px 16px; }
+    }
+
     /* ===== Timer Screen (round.png参考レイアウト) ===== */
     .timer-screen {
       flex: 1;
@@ -864,7 +1071,51 @@
 
       <div class="start-area">
         <button class="btn-start" id="btnStart">START</button>
+        <button class="btn-weight" id="btnWeight">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="5" r="2"></circle>
+            <path d="M8.5 7h7l3.5 12a1 1 0 0 1-1 1.3H6a1 1 0 0 1-1-1.3z"></path>
+          </svg>
+          WEIGHT CLASS
+        </button>
       </div>
+    </div>
+
+    <!-- ===== WEIGHT CLASS SCREEN ===== -->
+    <div class="weight-screen" id="weightScreen">
+
+      <div class="weight-head">
+        <button class="wc-back" id="btnWeightBack" title="BACK">&larr;</button>
+        <div class="weight-head-title">WEIGHT CLASS</div>
+        <div class="wc-head-spacer"></div>
+      </div>
+
+      <div class="weight-input-card">
+        <div class="setting-card-title">WEIGHT</div>
+        <div class="setting-card-control">
+          <button class="sc-btn" id="btnWeightMinus">&minus;</button>
+          <div class="weight-input-wrap">
+            <input class="weight-input" id="weightInput" type="text" inputmode="decimal"
+                   autocomplete="off" autocorrect="off" spellcheck="false" value="60.0">
+            <span class="weight-unit">kg</span>
+          </div>
+          <button class="sc-btn" id="btnWeightPlus">+</button>
+        </div>
+      </div>
+
+      <div class="weight-result">
+        <div class="wr-label">YOUR CLASS</div>
+        <div class="wr-name" id="wrName">&mdash;</div>
+        <div class="wr-en" id="wrEn">&mdash;</div>
+        <div class="wr-meta" id="wrMeta"></div>
+      </div>
+
+      <div class="weight-table-wrap">
+        <div id="weightTable"></div>
+      </div>
+
+      <div class="weight-note">プロボクシング17階級（JBC／主要4団体共通）<br>数字をタップすると直接入力できます</div>
+
     </div>
 
     <!-- ===== TIMER SCREEN ===== -->
@@ -1550,6 +1801,8 @@
       });
 
       document.addEventListener('keydown', (e) => {
+        // 階級ページを開いている間はタイマー操作のショートカットを無効にする
+        if (document.getElementById('weightScreen').classList.contains('active')) return;
         if (e.code === 'Space') {
           e.preventDefault();
           if (phase === 'ready') start();
@@ -1563,6 +1816,170 @@
       });
 
       updateSettingsDisplay();
+    })();
+
+    // ===== Weight Class (体重から階級を判定) =====
+    (() => {
+      const LB_TO_KG = 0.45359237;
+      const STORAGE_KEY = 'ayatobox.weight';
+      const MIN_W = 20;
+      const MAX_W = 200;
+
+      // プロボクシング17階級。リミットはポンドが正で、kgはそこから算出する
+      const CLASSES = [
+        { jp: 'ミニマム級',           en: 'MINIMUMWEIGHT',       lb: 105 },
+        { jp: 'ライトフライ級',       en: 'LIGHT FLYWEIGHT',     lb: 108 },
+        { jp: 'フライ級',             en: 'FLYWEIGHT',           lb: 112 },
+        { jp: 'スーパーフライ級',     en: 'SUPER FLYWEIGHT',     lb: 115 },
+        { jp: 'バンタム級',           en: 'BANTAMWEIGHT',        lb: 118 },
+        { jp: 'スーパーバンタム級',   en: 'SUPER BANTAMWEIGHT',  lb: 122 },
+        { jp: 'フェザー級',           en: 'FEATHERWEIGHT',       lb: 126 },
+        { jp: 'スーパーフェザー級',   en: 'SUPER FEATHERWEIGHT', lb: 130 },
+        { jp: 'ライト級',             en: 'LIGHTWEIGHT',         lb: 135 },
+        { jp: 'スーパーライト級',     en: 'SUPER LIGHTWEIGHT',   lb: 140 },
+        { jp: 'ウェルター級',         en: 'WELTERWEIGHT',        lb: 147 },
+        { jp: 'スーパーウェルター級', en: 'SUPER WELTERWEIGHT',  lb: 154 },
+        { jp: 'ミドル級',             en: 'MIDDLEWEIGHT',        lb: 160 },
+        { jp: 'スーパーミドル級',     en: 'SUPER MIDDLEWEIGHT',  lb: 168 },
+        { jp: 'ライトヘビー級',       en: 'LIGHT HEAVYWEIGHT',   lb: 175 },
+        { jp: 'クルーザー級',         en: 'CRUISERWEIGHT',       lb: 200 },
+        { jp: 'ヘビー級',             en: 'HEAVYWEIGHT',         lb: null } // 上限なし
+      ];
+      // ポンドが正。kgは小数2桁で切り捨て（JBC等の公表値と同じ形。表示と判定を完全に一致させる）
+      CLASSES.forEach((c) => { c.kg = (c.lb === null) ? null : Math.floor(c.lb * LB_TO_KG * 100) / 100; });
+
+      const settingsScreen = document.getElementById('settingsScreen');
+      const weightScreen = document.getElementById('weightScreen');
+      const input = document.getElementById('weightInput');
+      const wrName = document.getElementById('wrName');
+      const wrEn = document.getElementById('wrEn');
+      const wrMeta = document.getElementById('wrMeta');
+      const tableEl = document.getElementById('weightTable');
+
+      let weight = 60.0;
+
+      const kg = (n) => n.toFixed(2);
+      // 60 → "60.0"、53.52 → "53.52" のように余計な桁を出さない
+      const fmtW = (n) => {
+        const r = Math.round(n * 100) / 100;
+        return (Math.round(r * 10) / 10 === r) ? r.toFixed(1) : r.toFixed(2);
+      };
+
+      // 体重を満たせる一番軽い階級＝その人の階級
+      function findIndex(w) {
+        const i = CLASSES.findIndex((c) => c.kg !== null && w <= c.kg);
+        return i === -1 ? CLASSES.length - 1 : i;
+      }
+
+      function buildTable() {
+        tableEl.innerHTML = '';
+        CLASSES.forEach((c, i) => {
+          const row = document.createElement('div');
+          row.className = 'wt-row';
+          row.dataset.index = i;
+
+          const name = document.createElement('span');
+          name.textContent = c.jp;
+
+          const limit = document.createElement('span');
+          limit.className = 'wt-limit';
+          limit.textContent = (c.kg === null)
+            ? '無差別'
+            : kg(c.kg) + ' kg / ' + c.lb + ' lb';
+
+          row.appendChild(name);
+          row.appendChild(limit);
+          tableEl.appendChild(row);
+        });
+      }
+
+      function render() {
+        const idx = findIndex(weight);
+        const cls = CLASSES[idx];
+        const lower = idx > 0 ? CLASSES[idx - 1] : null;
+
+        wrName.textContent = cls.jp;
+        wrEn.textContent = cls.en;
+
+        const lines = [];
+        if (cls.kg === null) {
+          lines.push('リミット <b>なし</b>（無差別）');
+          if (lower) {
+            lines.push(lower.jp + 'なら あと <b>' + kg(weight - lower.kg) + '</b> kg 減量');
+          }
+        } else {
+          lines.push('リミット <b>' + kg(cls.kg) + '</b> kg ／ ' + cls.lb + ' lb');
+          const margin = cls.kg - weight;
+          lines.push(margin < 0.005
+            ? 'ちょうど <b>リミット</b>'
+            : 'リミットまで 余裕 <b>' + kg(margin) + '</b> kg');
+          if (lower) {
+            lines.push(lower.jp + 'なら あと <b>' + kg(weight - lower.kg) + '</b> kg 減量');
+          }
+        }
+        wrMeta.innerHTML = lines.join('<br>');
+
+        tableEl.querySelectorAll('.wt-row').forEach((row) => {
+          row.classList.toggle('current', Number(row.dataset.index) === idx);
+        });
+
+        // 該当行が隠れていたら見える位置へ
+        const currentRow = tableEl.querySelector('.wt-row.current');
+        if (currentRow && weightScreen.classList.contains('active')) {
+          const wrap = tableEl.parentElement;
+          const top = currentRow.offsetTop;
+          const bottom = top + currentRow.offsetHeight;
+          if (top < wrap.scrollTop || bottom > wrap.scrollTop + wrap.clientHeight) {
+            wrap.scrollTop = top - (wrap.clientHeight - currentRow.offsetHeight) / 2;
+          }
+        }
+      }
+
+      function clamp(w) {
+        return Math.min(MAX_W, Math.max(MIN_W, w));
+      }
+
+      function setWeight(w, syncInput) {
+        weight = Math.round(clamp(w) * 100) / 100;
+        if (syncInput) input.value = fmtW(weight);
+        try { localStorage.setItem(STORAGE_KEY, String(weight)); } catch (e) { /* 保存できなくても動作は続ける */ }
+        render();
+      }
+
+      function open() {
+        settingsScreen.classList.add('hidden');
+        weightScreen.classList.add('active');
+        input.value = fmtW(weight);
+        render();
+      }
+
+      function close() {
+        weightScreen.classList.remove('active');
+        settingsScreen.classList.remove('hidden');
+      }
+
+      // 入力中は数値だけ拾う（確定はblur時に整形）
+      input.addEventListener('input', () => {
+        const v = parseFloat(input.value);
+        if (!isNaN(v) && v >= MIN_W && v <= MAX_W) setWeight(v, false);
+      });
+
+      input.addEventListener('blur', () => { setWeight(parseFloat(input.value) || weight, true); });
+      input.addEventListener('keydown', (e) => { if (e.key === 'Enter') input.blur(); });
+      input.addEventListener('focus', () => { input.select(); });
+
+      document.getElementById('btnWeightMinus').addEventListener('click', () => setWeight(weight - 0.1, true));
+      document.getElementById('btnWeightPlus').addEventListener('click', () => setWeight(weight + 0.1, true));
+      document.getElementById('btnWeight').addEventListener('click', open);
+      document.getElementById('btnWeightBack').addEventListener('click', close);
+
+      let stored = null;
+      try { stored = localStorage.getItem(STORAGE_KEY); } catch (e) { /* プライベートブラウズ等 */ }
+      if (stored !== null && !isNaN(parseFloat(stored))) weight = clamp(parseFloat(stored));
+
+      buildTable();
+      input.value = fmtW(weight);
+      render();
     })();
 
     // ===== Intro Animation (Splash → Settings) =====
