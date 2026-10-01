@@ -432,6 +432,43 @@
     .wc-back:active { transform: scale(0.92); background: #ddd; }
     .wc-head-spacer { width: 40px; flex-shrink: 0; }
 
+    /* 競技・性別の切替 */
+    .wc-modes {
+      display: flex;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .wc-seg {
+      display: flex;
+      flex: 1;
+      background: var(--card);
+      border-radius: 10px;
+      padding: 3px;
+      gap: 3px;
+    }
+
+    .wc-seg-btn {
+      flex: 1;
+      height: 30px;
+      border: none;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--text-secondary);
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .wc-seg-btn.active {
+      background: var(--red);
+      color: #fff;
+    }
+
+    .wc-seg-btn:active { transform: scale(0.96); }
+
     .weight-input-card {
       background: var(--card);
       border-radius: 16px;
@@ -560,8 +597,13 @@
       font-size: 10.5px;
       color: var(--text-muted);
       text-align: center;
-      line-height: 1.6;
+      line-height: 1.7;
       flex-shrink: 0;
+    }
+
+    .weight-note a {
+      color: var(--text-secondary);
+      text-decoration: underline;
     }
 
     @media (max-height: 740px) {
@@ -569,6 +611,8 @@
       .weight-result { padding: 12px 16px; }
       .wr-name { font-size: 23px; }
       .wt-row { padding: 7px 16px; }
+      .wc-seg-btn { height: 27px; font-size: 12px; }
+      .weight-screen { gap: 8px; }
     }
 
     /* ===== Timer Screen (round.png参考レイアウト) ===== */
@@ -1090,6 +1134,17 @@
         <div class="wc-head-spacer"></div>
       </div>
 
+      <div class="wc-modes">
+        <div class="wc-seg" id="segStyle">
+          <button class="wc-seg-btn active" data-style="pro">プロ</button>
+          <button class="wc-seg-btn" data-style="am">アマチュア</button>
+        </div>
+        <div class="wc-seg" id="segSex">
+          <button class="wc-seg-btn active" data-sex="m">男子</button>
+          <button class="wc-seg-btn" data-sex="f">女子</button>
+        </div>
+      </div>
+
       <div class="weight-input-card">
         <div class="setting-card-title">WEIGHT</div>
         <div class="setting-card-control">
@@ -1114,7 +1169,7 @@
         <div id="weightTable"></div>
       </div>
 
-      <div class="weight-note">プロボクシング17階級（JBC／主要4団体共通）<br>数字をタップすると直接入力できます</div>
+      <div class="weight-note" id="weightNote"></div>
 
     </div>
 
@@ -1820,33 +1875,108 @@
 
     // ===== Weight Class (体重から階級を判定) =====
     (() => {
-      const LB_TO_KG = 0.45359237;
+      // ---- 出典・更新日 ----
+      // 階級データは下記の公式情報をそのまま採録している。変更時はDATA_UPDATEDも更新すること。
+      const DATA_UPDATED = '2026-10-02';
+      const SRC = {
+        pro: {
+          label: 'JBC（日本ボクシングコミッション）「基礎知識」',
+          url: 'https://jbc.or.jp/basic/',
+          note: 'kg表記はJBCの公表値。正式なリミットはポンドで定められています。'
+        },
+        am: {
+          label: 'World Boxing「LA28 Qualification System」2026年5月6日版',
+          url: 'https://worldboxing.org/wp-content/uploads/2026/05/Qualification-System-LA28-Boxing.pdf',
+          note: 'ロサンゼルス2028オリンピックの階級です。国内の一部大会では旧階級が使われる場合があります。'
+        }
+      };
+
+      // ---- 階級データ ----
+      // プロ: [日本語, 英語, ポンド, kgリミット]（最終行のヘビー級は上限なし）
+      const PRO_M = [
+        ['ミニマム級', 'MINIMUMWEIGHT', 105, 47.62],
+        ['ライト・フライ級', 'LIGHT FLYWEIGHT', 108, 48.97],
+        ['フライ級', 'FLYWEIGHT', 112, 50.80],
+        ['スーパー・フライ級', 'SUPER FLYWEIGHT', 115, 52.16],
+        ['バンタム級', 'BANTAMWEIGHT', 118, 53.52],
+        ['スーパー・バンタム級', 'SUPER BANTAMWEIGHT', 122, 55.34],
+        ['フェザー級', 'FEATHERWEIGHT', 126, 57.15],
+        ['スーパー・フェザー級', 'SUPER FEATHERWEIGHT', 130, 58.97],
+        ['ライト級', 'LIGHTWEIGHT', 135, 61.23],
+        ['スーパー・ライト級', 'SUPER LIGHTWEIGHT', 140, 63.50],
+        ['ウエルター級', 'WELTERWEIGHT', 147, 66.68],
+        ['スーパー・ウエルター級', 'SUPER WELTERWEIGHT', 154, 69.85],
+        ['ミドル級', 'MIDDLEWEIGHT', 160, 72.57],
+        ['スーパー・ミドル級', 'SUPER MIDDLEWEIGHT', 168, 76.20],
+        ['ライト・ヘビー級', 'LIGHT HEAVYWEIGHT', 175, 79.38],
+        ['クルーザー級', 'CRUISERWEIGHT', 200, 90.72],
+        ['ヘビー級', 'HEAVYWEIGHT', null, null]
+      ];
+      // 女子はアトム級・ミニフライ級があり、クルーザー級が無い（175ポンド超がヘビー級）
+      const PRO_F = [
+        ['アトム級', 'ATOMWEIGHT', 102, 46.26],
+        ['ミニ・フライ級', 'MINI FLYWEIGHT', 105, 47.62],
+        ['ライト・フライ級', 'LIGHT FLYWEIGHT', 108, 48.97],
+        ['フライ級', 'FLYWEIGHT', 112, 50.80],
+        ['スーパー・フライ級', 'SUPER FLYWEIGHT', 115, 52.16],
+        ['バンタム級', 'BANTAMWEIGHT', 118, 53.52],
+        ['スーパー・バンタム級', 'SUPER BANTAMWEIGHT', 122, 55.34],
+        ['フェザー級', 'FEATHERWEIGHT', 126, 57.15],
+        ['スーパー・フェザー級', 'SUPER FEATHERWEIGHT', 130, 58.97],
+        ['ライト級', 'LIGHTWEIGHT', 135, 61.23],
+        ['スーパー・ライト級', 'SUPER LIGHTWEIGHT', 140, 63.50],
+        ['ウエルター級', 'WELTERWEIGHT', 147, 66.68],
+        ['スーパー・ウエルター級', 'SUPER WELTERWEIGHT', 154, 69.85],
+        ['ミドル級', 'MIDDLEWEIGHT', 160, 72.57],
+        ['スーパー・ミドル級', 'SUPER MIDDLEWEIGHT', 168, 76.20],
+        ['ライト・ヘビー級', 'LIGHT HEAVYWEIGHT', 175, 79.38],
+        ['ヘビー級', 'HEAVYWEIGHT', null, null]
+      ];
+      // アマ: [日本語, 英語, kg上限]（最終行は上限なし）。下限は AM_FLOOR
+      const AM_M = [
+        ['バンタム級', 'BANTAMWEIGHT', 55],
+        ['ライト級', 'LIGHTWEIGHT', 60],
+        ['ウェルター級', 'WELTERWEIGHT', 65],
+        ['ライトミドル級', 'LIGHT-MIDDLEWEIGHT', 70],
+        ['ライトヘビー級', 'LIGHT-HEAVYWEIGHT', 80],
+        ['ヘビー級', 'HEAVYWEIGHT', 90],
+        ['スーパーヘビー級', 'SUPER-HEAVYWEIGHT', null]
+      ];
+      const AM_F = [
+        ['フライ級', 'FLYWEIGHT', 51],
+        ['バンタム級', 'BANTAMWEIGHT', 54],
+        ['フェザー級', 'FEATHERWEIGHT', 57],
+        ['ライト級', 'LIGHTWEIGHT', 60],
+        ['ウェルター級', 'WELTERWEIGHT', 65],
+        ['ライトミドル級', 'LIGHT-MIDDLEWEIGHT', 70],
+        ['ミドル級', 'MIDDLEWEIGHT', 75]
+      ];
+      const AM_FLOOR = { m: 50, f: 48 }; // 最軽量階級の下限体重
+
+      function buildSet(rows, kind, sex) {
+        return rows.map((r, i) => ({
+          jp: r[0],
+          en: r[1],
+          lb: kind === 'pro' ? r[2] : null,
+          kg: kind === 'pro' ? r[3] : r[2],
+          // 下限＝ひとつ下の階級の上限。最軽量はアマのみ規定あり
+          floor: i > 0
+            ? (kind === 'pro' ? rows[i - 1][3] : rows[i - 1][2])
+            : (kind === 'am' ? AM_FLOOR[sex] : null)
+        }));
+      }
+
+      const SETS = {
+        pro_m: buildSet(PRO_M, 'pro', 'm'),
+        pro_f: buildSet(PRO_F, 'pro', 'f'),
+        am_m:  buildSet(AM_M, 'am', 'm'),
+        am_f:  buildSet(AM_F, 'am', 'f')
+      };
+
       const STORAGE_KEY = 'ayatobox.weight';
+      const MODE_KEY = 'ayatobox.weightMode';
       const MIN_W = 20;
       const MAX_W = 200;
-
-      // プロボクシング17階級。リミットはポンドが正で、kgはそこから算出する
-      const CLASSES = [
-        { jp: 'ミニマム級',           en: 'MINIMUMWEIGHT',       lb: 105 },
-        { jp: 'ライトフライ級',       en: 'LIGHT FLYWEIGHT',     lb: 108 },
-        { jp: 'フライ級',             en: 'FLYWEIGHT',           lb: 112 },
-        { jp: 'スーパーフライ級',     en: 'SUPER FLYWEIGHT',     lb: 115 },
-        { jp: 'バンタム級',           en: 'BANTAMWEIGHT',        lb: 118 },
-        { jp: 'スーパーバンタム級',   en: 'SUPER BANTAMWEIGHT',  lb: 122 },
-        { jp: 'フェザー級',           en: 'FEATHERWEIGHT',       lb: 126 },
-        { jp: 'スーパーフェザー級',   en: 'SUPER FEATHERWEIGHT', lb: 130 },
-        { jp: 'ライト級',             en: 'LIGHTWEIGHT',         lb: 135 },
-        { jp: 'スーパーライト級',     en: 'SUPER LIGHTWEIGHT',   lb: 140 },
-        { jp: 'ウェルター級',         en: 'WELTERWEIGHT',        lb: 147 },
-        { jp: 'スーパーウェルター級', en: 'SUPER WELTERWEIGHT',  lb: 154 },
-        { jp: 'ミドル級',             en: 'MIDDLEWEIGHT',        lb: 160 },
-        { jp: 'スーパーミドル級',     en: 'SUPER MIDDLEWEIGHT',  lb: 168 },
-        { jp: 'ライトヘビー級',       en: 'LIGHT HEAVYWEIGHT',   lb: 175 },
-        { jp: 'クルーザー級',         en: 'CRUISERWEIGHT',       lb: 200 },
-        { jp: 'ヘビー級',             en: 'HEAVYWEIGHT',         lb: null } // 上限なし
-      ];
-      // ポンドが正。kgは小数2桁で切り捨て（JBC等の公表値と同じ形。表示と判定を完全に一致させる）
-      CLASSES.forEach((c) => { c.kg = (c.lb === null) ? null : Math.floor(c.lb * LB_TO_KG * 100) / 100; });
 
       const settingsScreen = document.getElementById('settingsScreen');
       const weightScreen = document.getElementById('weightScreen');
@@ -1855,8 +1985,11 @@
       const wrEn = document.getElementById('wrEn');
       const wrMeta = document.getElementById('wrMeta');
       const tableEl = document.getElementById('weightTable');
+      const noteEl = document.getElementById('weightNote');
 
       let weight = 60.0;
+      let style = 'pro';  // pro | am
+      let sex = 'm';      // m | f
 
       const kg = (n) => n.toFixed(2);
       // 60 → "60.0"、53.52 → "53.52" のように余計な桁を出さない
@@ -1864,16 +1997,26 @@
         const r = Math.round(n * 100) / 100;
         return (Math.round(r * 10) / 10 === r) ? r.toFixed(1) : r.toFixed(2);
       };
+      // アマは整数階級なので 55 → "55"、プロは 61.23 のまま
+      const fmtLimit = (n) => (n % 1 === 0 ? String(n) : kg(n));
+
+      const currentSet = () => SETS[style + '_' + sex];
+
+      function store(key, val) {
+        try { localStorage.setItem(key, val); } catch (e) { /* 保存できなくても動作は続ける */ }
+      }
 
       // 体重を満たせる一番軽い階級＝その人の階級
       function findIndex(w) {
-        const i = CLASSES.findIndex((c) => c.kg !== null && w <= c.kg);
-        return i === -1 ? CLASSES.length - 1 : i;
+        const set = currentSet();
+        const i = set.findIndex((c) => c.kg !== null && w <= c.kg);
+        return i === -1 ? set.length - 1 : i;
       }
 
       function buildTable() {
+        const set = currentSet();
         tableEl.innerHTML = '';
-        CLASSES.forEach((c, i) => {
+        set.forEach((c, i) => {
           const row = document.createElement('div');
           row.className = 'wt-row';
           row.dataset.index = i;
@@ -1883,9 +2026,13 @@
 
           const limit = document.createElement('span');
           limit.className = 'wt-limit';
-          limit.textContent = (c.kg === null)
-            ? '無差別'
-            : kg(c.kg) + ' kg / ' + c.lb + ' lb';
+          if (style === 'pro') {
+            limit.textContent = (c.kg === null) ? '無差別' : kg(c.kg) + ' kg / ' + c.lb + ' lb';
+          } else {
+            limit.textContent = (c.kg === null)
+              ? '+' + fmtLimit(c.floor) + ' kg'
+              : fmtLimit(c.floor) + '〜' + fmtLimit(c.kg) + ' kg';
+          }
 
           row.appendChild(name);
           row.appendChild(limit);
@@ -1894,28 +2041,52 @@
       }
 
       function render() {
+        const set = currentSet();
+        const heaviest = set[set.length - 1];
+        // アマ女子の最重量ミドル級には上限があるため、超えると該当階級が無い
+        const overTop = heaviest.kg !== null && weight > heaviest.kg;
         const idx = findIndex(weight);
-        const cls = CLASSES[idx];
-        const lower = idx > 0 ? CLASSES[idx - 1] : null;
+        const cls = set[idx];
+        const lower = idx > 0 ? set[idx - 1] : null;
+
+        if (overTop) {
+          wrName.textContent = '該当階級なし';
+          wrEn.textContent = 'OVER THE TOP CLASS';
+          wrMeta.innerHTML =
+            '最重量の' + heaviest.jp + '（上限 ' + fmtLimit(heaviest.kg) + ' kg）を<br>' +
+            '<b>' + kg(weight - heaviest.kg) + '</b> kg 超えています';
+          tableEl.querySelectorAll('.wt-row').forEach((row) => row.classList.remove('current'));
+          return;
+        }
 
         wrName.textContent = cls.jp;
         wrEn.textContent = cls.en;
 
         const lines = [];
         if (cls.kg === null) {
-          lines.push('リミット <b>なし</b>（無差別）');
-          if (lower) {
-            lines.push(lower.jp + 'なら あと <b>' + kg(weight - lower.kg) + '</b> kg 減量');
-          }
-        } else {
+          lines.push(style === 'pro'
+            ? 'リミット <b>なし</b>（無差別）'
+            : '<b>' + fmtLimit(cls.floor) + '</b> kg 超（上限なし）');
+        } else if (style === 'pro') {
           lines.push('リミット <b>' + kg(cls.kg) + '</b> kg ／ ' + cls.lb + ' lb');
+        } else {
+          lines.push('階級 <b>' + fmtLimit(cls.floor) + '〜' + fmtLimit(cls.kg) + '</b> kg');
+        }
+
+        // アマの最軽量階級は下限を下回ると出場できない
+        const underFloor = !lower && cls.floor !== null && weight < cls.floor;
+
+        if (cls.kg !== null && !underFloor) {
           const margin = cls.kg - weight;
           lines.push(margin < 0.005
             ? 'ちょうど <b>リミット</b>'
             : 'リミットまで 余裕 <b>' + kg(margin) + '</b> kg');
-          if (lower) {
-            lines.push(lower.jp + 'なら あと <b>' + kg(weight - lower.kg) + '</b> kg 減量');
-          }
+        }
+
+        if (underFloor) {
+          lines.push('下限 ' + fmtLimit(cls.floor) + ' kg まで あと <b>' + kg(cls.floor - weight) + '</b> kg 必要');
+        } else if (lower) {
+          lines.push(lower.jp + 'なら あと <b>' + kg(weight - lower.kg) + '</b> kg 減量');
         }
         wrMeta.innerHTML = lines.join('<br>');
 
@@ -1935,25 +2106,50 @@
         }
       }
 
-      function clamp(w) {
-        return Math.min(MAX_W, Math.max(MIN_W, w));
+      function renderNote() {
+        const src = SRC[style];
+        noteEl.innerHTML =
+          src.note + '<br>' +
+          '出典: <a href="' + src.url + '" target="_blank" rel="noopener">' + src.label + '</a><br>' +
+          'データ更新日 ' + DATA_UPDATED + '／数字をタップすると直接入力できます';
       }
+
+      function refresh() {
+        buildTable();
+        renderNote();
+        render();
+      }
+
+      const clamp = (w) => Math.min(MAX_W, Math.max(MIN_W, w));
 
       function setWeight(w, syncInput) {
         weight = Math.round(clamp(w) * 100) / 100;
         if (syncInput) input.value = fmtW(weight);
-        try { localStorage.setItem(STORAGE_KEY, String(weight)); } catch (e) { /* 保存できなくても動作は続ける */ }
+        store(STORAGE_KEY, String(weight));
         render();
       }
 
-      function open() {
+      function setMode(nextStyle, nextSex) {
+        style = nextStyle;
+        sex = nextSex;
+        store(MODE_KEY, style + '_' + sex);
+        document.querySelectorAll('#segStyle .wc-seg-btn').forEach((b) => {
+          b.classList.toggle('active', b.dataset.style === style);
+        });
+        document.querySelectorAll('#segSex .wc-seg-btn').forEach((b) => {
+          b.classList.toggle('active', b.dataset.sex === sex);
+        });
+        refresh();
+      }
+
+      function openWeight() {
         settingsScreen.classList.add('hidden');
         weightScreen.classList.add('active');
         input.value = fmtW(weight);
         render();
       }
 
-      function close() {
+      function closeWeight() {
         weightScreen.classList.remove('active');
         settingsScreen.classList.remove('hidden');
       }
@@ -1970,16 +2166,31 @@
 
       document.getElementById('btnWeightMinus').addEventListener('click', () => setWeight(weight - 0.1, true));
       document.getElementById('btnWeightPlus').addEventListener('click', () => setWeight(weight + 0.1, true));
-      document.getElementById('btnWeight').addEventListener('click', open);
-      document.getElementById('btnWeightBack').addEventListener('click', close);
+      document.getElementById('btnWeight').addEventListener('click', openWeight);
+      document.getElementById('btnWeightBack').addEventListener('click', closeWeight);
 
-      let stored = null;
-      try { stored = localStorage.getItem(STORAGE_KEY); } catch (e) { /* プライベートブラウズ等 */ }
+      document.querySelectorAll('#segStyle .wc-seg-btn').forEach((b) => {
+        b.addEventListener('click', () => setMode(b.dataset.style, sex));
+      });
+      document.querySelectorAll('#segSex .wc-seg-btn').forEach((b) => {
+        b.addEventListener('click', () => setMode(style, b.dataset.sex));
+      });
+
+      // 保存値の復元
+      let stored = null, storedMode = null;
+      try {
+        stored = localStorage.getItem(STORAGE_KEY);
+        storedMode = localStorage.getItem(MODE_KEY);
+      } catch (e) { /* プライベートブラウズ等 */ }
       if (stored !== null && !isNaN(parseFloat(stored))) weight = clamp(parseFloat(stored));
+      if (storedMode && SETS[storedMode]) {
+        const parts = storedMode.split('_');
+        style = parts[0];
+        sex = parts[1];
+      }
 
-      buildTable();
       input.value = fmtW(weight);
-      render();
+      setMode(style, sex);
     })();
 
     // ===== Intro Animation (Splash → Settings) =====
