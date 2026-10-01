@@ -516,32 +516,6 @@
       border-color: var(--red);
     }
 
-    .btn-check {
-      width: 100%;
-      height: 50px;
-      border: none;
-      border-radius: 14px;
-      background: var(--red);
-      color: #fff;
-      font-family: 'Oswald', sans-serif;
-      font-size: 17px;
-      font-weight: 600;
-      letter-spacing: 4px;
-      cursor: pointer;
-      flex-shrink: 0;
-      transition: all 0.15s ease;
-    }
-
-    .btn-check:active { transform: scale(0.97); background: var(--red-deep); }
-
-    /* 結果が更新されたことが分かるように軽く反応させる */
-    .weight-result.flash { animation: wr-flash 0.45s ease; }
-
-    @keyframes wr-flash {
-      0%   { transform: scale(1); }
-      40%  { transform: scale(1.025); }
-      100% { transform: scale(1); }
-    }
 
     .weight-unit {
       font-family: 'Oswald', sans-serif;
@@ -656,7 +630,6 @@
       .wc-seg-btn { height: 27px; font-size: 12px; }
       .weight-screen { gap: 8px; }
       .weight-input { height: 44px; font-size: 31px; }
-      .btn-check { height: 44px; font-size: 16px; }
     }
 
     /* ===== Timer Screen (round.png参考レイアウト) ===== */
@@ -1198,8 +1171,6 @@
           <span class="weight-unit">kg</span>
         </div>
       </div>
-
-      <button class="btn-check" id="btnCheck">階級を見る</button>
 
       <div class="weight-result">
         <div class="wr-label">YOUR CLASS</div>
@@ -2207,15 +2178,9 @@
       input.addEventListener('keydown', (e) => { if (e.key === 'Enter') input.blur(); });
       input.addEventListener('focus', () => { input.select(); });
 
-      // 「階級を見る」＝入力を確定してキーボードを閉じる。
-      // iOSの数字キーボードには完了キーが無く、これが唯一の閉じる手段になる
-      document.getElementById('btnCheck').addEventListener('click', () => {
-        input.blur();
-        setWeight(parseFloat(input.value) || weight, true);
-        const card = document.querySelector('.weight-result');
-        card.classList.remove('flash');
-        void card.offsetWidth; // アニメーションを再生し直すためのリフロー
-        card.classList.add('flash');
+      // iOSの数字キーボードには完了キーが無いため、入力欄以外をタップしたら閉じる
+      weightScreen.addEventListener('click', (e) => {
+        if (e.target !== input) input.blur();
       });
 
       document.getElementById('btnWeight').addEventListener('click', openWeight);
