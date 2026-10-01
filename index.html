@@ -449,23 +449,28 @@
 
     .wc-seg {
       display: flex;
-      flex: 1;
       background: var(--card);
       border-radius: 10px;
       padding: 3px;
       gap: 3px;
     }
 
+    /* 競技区分は3つ、下位区分は2つなので幅を 3:2 で配分する */
+    .wc-seg-style { flex: 3; }
+    .wc-seg-sub { flex: 2; }
+
     .wc-seg-btn {
       flex: 1;
       height: 30px;
+      padding: 0 2px;
       border: none;
       border-radius: 8px;
       background: transparent;
       color: var(--text-secondary);
       font-family: 'Inter', sans-serif;
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 600;
+      white-space: nowrap;
       cursor: pointer;
       transition: all 0.15s ease;
     }
@@ -1152,14 +1157,12 @@
       </div>
 
       <div class="wc-modes">
-        <div class="wc-seg" id="segStyle">
+        <div class="wc-seg wc-seg-style" id="segStyle">
           <button class="wc-seg-btn active" data-style="pro">プロ</button>
-          <button class="wc-seg-btn" data-style="am">アマチュア</button>
+          <button class="wc-seg-btn" data-style="am">アマ</button>
+          <button class="wc-seg-btn" data-style="uj">ジュニア</button>
         </div>
-        <div class="wc-seg" id="segSex">
-          <button class="wc-seg-btn active" data-sex="m">男子</button>
-          <button class="wc-seg-btn" data-sex="f">女子</button>
-        </div>
+        <div class="wc-seg wc-seg-sub" id="segSub"></div>
       </div>
 
       <div class="weight-input-card">
@@ -1902,6 +1905,11 @@
           label: 'World Boxing「LA28 Qualification System」2026年5月6日版',
           url: 'https://worldboxing.org/wp-content/uploads/2026/05/Qualification-System-LA28-Boxing.pdf',
           note: 'ロサンゼルス2028オリンピックの階級です。国内の一部大会では旧階級が使われる場合があります。'
+        },
+        uj: {
+          label: '日本ボクシング連盟「競技規則」2026年4月1日改訂',
+          url: 'https://jabf-revival.com/wp-content/uploads/2026/03/post_3432-3.pdf',
+          note: 'アンダージュニア（UJ）の階級です。男女同じ区分で、小学生の実戦競技は5年生以上が対象です。'
         }
       };
 
@@ -1967,6 +1975,11 @@
       ];
       const AM_FLOOR = { m: 50, f: 48 }; // 最軽量階級の下限体重
 
+      // アンダージュニア（男女同じ区分）。各階級の上限kgを並べたもの
+      const UJ_E = [31, 34, 37, 40, 43, 46, 49, 52, 56];                     // 小学生の部（下限28kg）
+      const UJ_J = [33, 36, 39, 42, 45, 48, 51, 54, 57, 60, 64, 68, 72];     // 中学生の部（下限30kg）
+      const UJ_FLOOR = { e: 28, j: 30 };
+
       function buildSet(rows, kind, sex) {
         return rows.map((r, i) => ({
           jp: r[0],
@@ -1980,16 +1993,35 @@
         }));
       }
 
+      function buildUJ(limits, floor, enLabel) {
+        return limits.map((kg, i) => ({
+          jp: kg + 'kg級',
+          en: enLabel,
+          lb: null,
+          kg: kg,
+          floor: i > 0 ? limits[i - 1] : floor
+        }));
+      }
+
       const SETS = {
         pro_m: buildSet(PRO_M, 'pro', 'm'),
         pro_f: buildSet(PRO_F, 'pro', 'f'),
         am_m:  buildSet(AM_M, 'am', 'm'),
-        am_f:  buildSet(AM_F, 'am', 'f')
+        am_f:  buildSet(AM_F, 'am', 'f'),
+        uj_e:  buildUJ(UJ_E, UJ_FLOOR.e, 'UJ ELEMENTARY'),
+        uj_j:  buildUJ(UJ_J, UJ_FLOOR.j, 'UJ JUNIOR HIGH')
+      };
+
+      // 競技区分ごとの下位区分（プロ・アマは男女、ジュニアは学年）
+      const SUBS = {
+        pro: [['m', '男子'], ['f', '女子']],
+        am:  [['m', '男子'], ['f', '女子']],
+        uj:  [['e', '小学生'], ['j', '中学生']]
       };
 
       const STORAGE_KEY = 'ayatobox.weight';
       const MODE_KEY = 'ayatobox.weightMode';
-      const MIN_W = 20;
+      const MIN_W = 15;
       const MAX_W = 200;
 
       const settingsScreen = document.getElementById('settingsScreen');
@@ -2002,8 +2034,8 @@
       const noteEl = document.getElementById('weightNote');
 
       let weight = 60.0;
-      let style = 'pro';  // pro | am
-      let sex = 'm';      // m | f
+      let style = 'pro';  // pro | am | uj
+      let sub = 'm';      // プロ/アマ: m|f ／ ジュニア: e|j
 
       const kg = (n) => n.toFixed(2);
       // 60 → "60.0"、53.52 → "53.52" のように余計な桁を出さない
@@ -2014,7 +2046,7 @@
       // アマは整数階級なので 55 → "55"、プロは 61.23 のまま
       const fmtLimit = (n) => (n % 1 === 0 ? String(n) : kg(n));
 
-      const currentSet = () => SETS[style + '_' + sex];
+      const currentSet = () => SETS[style + '_' + sub];
 
       function store(key, val) {
         try { localStorage.setItem(key, val); } catch (e) { /* 保存できなくても動作は続ける */ }
@@ -2143,16 +2175,31 @@
         render();
       }
 
-      function setMode(nextStyle, nextSex) {
+      function buildSubSeg() {
+        const seg = document.getElementById('segSub');
+        seg.innerHTML = '';
+        SUBS[style].forEach(([val, label]) => {
+          const b = document.createElement('button');
+          b.className = 'wc-seg-btn' + (val === sub ? ' active' : '');
+          b.textContent = label;
+          b.addEventListener('click', () => setMode(style, val));
+          seg.appendChild(b);
+        });
+      }
+
+      // 区分ごとに最後に選んだ下位区分を覚えておき、戻ってきたときに復元する
+      const lastSub = { pro: 'm', am: 'm', uj: 'e' };
+
+      function setMode(nextStyle, nextSub) {
         style = nextStyle;
-        sex = nextSex;
-        store(MODE_KEY, style + '_' + sex);
+        const valid = SUBS[style].map((x) => x[0]);
+        sub = valid.indexOf(nextSub) === -1 ? lastSub[style] : nextSub;
+        lastSub[style] = sub;
+        store(MODE_KEY, style + '_' + sub);
         document.querySelectorAll('#segStyle .wc-seg-btn').forEach((b) => {
           b.classList.toggle('active', b.dataset.style === style);
         });
-        document.querySelectorAll('#segSex .wc-seg-btn').forEach((b) => {
-          b.classList.toggle('active', b.dataset.sex === sex);
-        });
+        buildSubSeg();
         refresh();
       }
 
@@ -2187,10 +2234,7 @@
       document.getElementById('btnWeightBack').addEventListener('click', closeWeight);
 
       document.querySelectorAll('#segStyle .wc-seg-btn').forEach((b) => {
-        b.addEventListener('click', () => setMode(b.dataset.style, sex));
-      });
-      document.querySelectorAll('#segSex .wc-seg-btn').forEach((b) => {
-        b.addEventListener('click', () => setMode(style, b.dataset.sex));
+        b.addEventListener('click', () => setMode(b.dataset.style, sub));
       });
 
       // 保存値の復元
@@ -2203,11 +2247,12 @@
       if (storedMode && SETS[storedMode]) {
         const parts = storedMode.split('_');
         style = parts[0];
-        sex = parts[1];
+        sub = parts[1];
+        lastSub[style] = sub;
       }
 
       input.value = fmtW(weight);
-      setMode(style, sex);
+      setMode(style, sub);
     })();
 
     // ===== Intro Animation (Splash → Settings) =====
