@@ -469,8 +469,8 @@
       gap: 3px;
     }
 
-    /* 競技区分は3つ、下位区分は2つなので幅を 3:2 で配分する */
-    .wc-seg-style { flex: 3; }
+    /* 幅はボタン数に比例させる（下位区分の数はJSで style.flex に設定） */
+    .wc-seg-style { flex: 4; }
     .wc-seg-sub { flex: 2; }
 
     .wc-seg-btn {
@@ -1174,7 +1174,8 @@
         <div class="wc-seg wc-seg-style" id="segStyle">
           <button class="wc-seg-btn active" data-style="pro">プロ</button>
           <button class="wc-seg-btn" data-style="am">アマ</button>
-          <button class="wc-seg-btn" data-style="uj">ジュニア</button>
+          <button class="wc-seg-btn" data-style="uj">UJ</button>
+          <button class="wc-seg-btn" data-style="jcl">JCL</button>
         </div>
         <div class="wc-seg wc-seg-sub" id="segSub"></div>
       </div>
@@ -1919,7 +1920,7 @@
     (() => {
       // ---- 出典・更新日 ----
       // 階級データは下記の公式情報をそのまま採録している。変更時はDATA_UPDATEDも更新すること。
-      const DATA_UPDATED = '2026-10-02';
+      const DATA_UPDATED = '2026-10-14';
       const SRC = {
         pro: {
           label: 'JBC（日本ボクシングコミッション）「基礎知識」',
@@ -1935,6 +1936,11 @@
           label: '日本ボクシング連盟「競技規則」2026年4月1日改訂',
           url: 'https://jabf-revival.com/wp-content/uploads/2026/03/post_3432-3.pdf',
           note: 'アンダージュニア（UJ）の階級です。男女同じ区分で、小学生の実戦競技は5年生以上が対象です。'
+        },
+        jcl: {
+          label: 'JCL実行委員会「JCLルール」2026年3月25日版',
+          url: 'https://boxmob.jp/sp/jcl/doc/jcl_rule26032501.pdf',
+          note: 'ジュニア・チャンピオンズリーグ（JCL）の階級です。男女同じ区分で、U10は小学3〜4年、U12は小学6年まで、U15は中学生、U18は16〜18歳が対象です。'
         }
       };
 
@@ -2005,6 +2011,29 @@
       const UJ_J = [33, 36, 39, 42, 45, 48, 51, 54, 57, 60, 64, 68, 72];     // 中学生の部（下限30kg）
       const UJ_FLOOR = { e: 28, j: 30 };
 
+      // ジュニア・チャンピオンズリーグ（男女同じ区分）。U10〜U15は各階級の上限kg
+      const JCL_U10 = [22.5, 25, 27.5, 30, 32.5, 35, 37.5, 40];                                  // 下限20kg
+      const JCL_U12 = [27.5, 30, 32.5, 35, 37.5, 40, 42.5, 45, 47.5, 50, 52.5, 55];              // 下限25kg
+      const JCL_U15 = [32.5, 35, 37.5, 40, 42.5, 45, 47.5, 50, 52.5, 55, 57.5, 60, 63, 66, 70];  // 下限30kg
+      const JCL_FLOOR = { u10: 20, u12: 25, u15: 30 };
+      // U18: [日本語, 英語, kg上限]。最軽量のアトム級は下限なし、ミドル級より上の階級は無い
+      const JCL_U18 = [
+        ['アトム級', 'ATOMWEIGHT', 46.2],
+        ['ミニマム級', 'MINIMUMWEIGHT', 47.6],
+        ['ライト・フライ級', 'LIGHT FLYWEIGHT', 48.9],
+        ['フライ級', 'FLYWEIGHT', 50.8],
+        ['スーパー・フライ級', 'SUPER FLYWEIGHT', 52.1],
+        ['バンタム級', 'BANTAMWEIGHT', 53.5],
+        ['スーパー・バンタム級', 'SUPER BANTAMWEIGHT', 55.3],
+        ['フェザー級', 'FEATHERWEIGHT', 57.1],
+        ['スーパー・フェザー級', 'SUPER FEATHERWEIGHT', 58.9],
+        ['ライト級', 'LIGHTWEIGHT', 61.2],
+        ['スーパー・ライト級', 'SUPER LIGHTWEIGHT', 63.5],
+        ['ウエルター級', 'WELTERWEIGHT', 66.6],
+        ['スーパー・ウエルター級', 'SUPER WELTERWEIGHT', 69.8],
+        ['ミドル級', 'MIDDLEWEIGHT', 72.5]
+      ];
+
       function buildSet(rows, kind, sex) {
         return rows.map((r, i) => ({
           jp: r[0],
@@ -2018,9 +2047,10 @@
         }));
       }
 
-      function buildUJ(limits, floor, enLabel) {
+      // JCLは「40.0キロ級」のように小数1桁で呼ぶため digits で桁数を指定する
+      function buildUJ(limits, floor, enLabel, digits) {
         return limits.map((kg, i) => ({
-          jp: kg + 'kg級',
+          jp: (digits ? kg.toFixed(digits) : kg) + 'kg級',
           en: enLabel,
           lb: null,
           kg: kg,
@@ -2034,14 +2064,22 @@
         am_m:  buildSet(AM_M, 'am', 'm'),
         am_f:  buildSet(AM_F, 'am', 'f'),
         uj_e:  buildUJ(UJ_E, UJ_FLOOR.e, 'UJ ELEMENTARY'),
-        uj_j:  buildUJ(UJ_J, UJ_FLOOR.j, 'UJ JUNIOR HIGH')
+        uj_j:  buildUJ(UJ_J, UJ_FLOOR.j, 'UJ JUNIOR HIGH'),
+        jcl_u10: buildUJ(JCL_U10, JCL_FLOOR.u10, 'JCL U-10', 1),
+        jcl_u12: buildUJ(JCL_U12, JCL_FLOOR.u12, 'JCL U-12', 1),
+        jcl_u15: buildUJ(JCL_U15, JCL_FLOOR.u15, 'JCL U-15', 1),
+        jcl_u18: JCL_U18.map((r, i) => ({
+          jp: r[0], en: r[1], lb: null, kg: r[2],
+          floor: i > 0 ? JCL_U18[i - 1][2] : null
+        }))
       };
 
-      // 競技区分ごとの下位区分（プロ・アマは男女、ジュニアは学年）
+      // 競技区分ごとの下位区分（プロ・アマは男女、UJは学年、JCLは年齢カテゴリ）
       const SUBS = {
         pro: [['m', '男子'], ['f', '女子']],
         am:  [['m', '男子'], ['f', '女子']],
-        uj:  [['e', '小学生'], ['j', '中学生']]
+        uj:  [['e', '小学生'], ['j', '中学生']],
+        jcl: [['u10', 'U10'], ['u12', 'U12'], ['u15', 'U15'], ['u18', 'U18']]
       };
 
       const STORAGE_KEY = 'ayatobox.weight';
@@ -2059,8 +2097,8 @@
       const noteEl = document.getElementById('weightNote');
 
       let weight = 60.0;
-      let style = 'pro';  // pro | am | uj
-      let sub = 'm';      // プロ/アマ: m|f ／ ジュニア: e|j
+      let style = 'pro';  // pro | am | uj | jcl
+      let sub = 'm';      // プロ/アマ: m|f ／ UJ: e|j ／ JCL: u10|u12|u15|u18
 
       const kg = (n) => n.toFixed(2);
       // 60 → "60.0"、53.52 → "53.52" のように余計な桁を出さない
@@ -2068,8 +2106,10 @@
         const r = Math.round(n * 100) / 100;
         return (Math.round(r * 10) / 10 === r) ? r.toFixed(1) : r.toFixed(2);
       };
-      // アマは整数階級なので 55 → "55"、プロは 61.23 のまま
-      const fmtLimit = (n) => (n % 1 === 0 ? String(n) : kg(n));
+      // 余計な0を付けない（55 → "55"、22.5 → "22.5"、61.23 → "61.23"）
+      const fmtLimit = (n) => String(Math.round(n * 100) / 100);
+      // 下限の無い最軽量階級（JCL U18のアトム級）は「〜46.2」と上限だけ示す
+      const fmtRange = (c) => (c.floor === null ? '' : fmtLimit(c.floor)) + '〜' + fmtLimit(c.kg);
 
       const currentSet = () => SETS[style + '_' + sub];
 
@@ -2102,7 +2142,7 @@
           } else {
             limit.textContent = (c.kg === null)
               ? '+' + fmtLimit(c.floor) + ' kg'
-              : fmtLimit(c.floor) + '〜' + fmtLimit(c.kg) + ' kg';
+              : fmtRange(c) + ' kg';
           }
 
           row.appendChild(name);
@@ -2114,7 +2154,7 @@
       function render() {
         const set = currentSet();
         const heaviest = set[set.length - 1];
-        // アマ女子の最重量ミドル級には上限があるため、超えると該当階級が無い
+        // アマ女子・ジュニアの最重量階級には上限があるため、超えると該当階級が無い
         const overTop = heaviest.kg !== null && weight > heaviest.kg;
         const idx = findIndex(weight);
         const cls = set[idx];
@@ -2141,7 +2181,7 @@
         } else if (style === 'pro') {
           lines.push('リミット <b>' + kg(cls.kg) + '</b> kg ／ ' + cls.lb + ' lb');
         } else {
-          lines.push('階級 <b>' + fmtLimit(cls.floor) + '〜' + fmtLimit(cls.kg) + '</b> kg');
+          lines.push('階級 <b>' + fmtRange(cls) + '</b> kg');
         }
 
         // アマの最軽量階級は下限を下回ると出場できない
@@ -2203,6 +2243,7 @@
       function buildSubSeg() {
         const seg = document.getElementById('segSub');
         seg.innerHTML = '';
+        seg.style.flex = String(SUBS[style].length);
         SUBS[style].forEach(([val, label]) => {
           const b = document.createElement('button');
           b.className = 'wc-seg-btn' + (val === sub ? ' active' : '');
@@ -2216,7 +2257,7 @@
       }
 
       // 区分ごとに最後に選んだ下位区分を覚えておき、戻ってきたときに復元する
-      const lastSub = { pro: 'm', am: 'm', uj: 'e' };
+      const lastSub = { pro: 'm', am: 'm', uj: 'e', jcl: 'u12' };
 
       function setMode(nextStyle, nextSub) {
         style = nextStyle;
