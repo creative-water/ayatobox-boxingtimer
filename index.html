@@ -11,6 +11,20 @@
   <link rel="icon" type="image/png" href="assets/favicon.png">
   <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png">
   <link rel="manifest" href="manifest.json">
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-Z2EZN4XEKM"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){ dataLayer.push(arguments); }
+    gtag('js', new Date());
+    gtag('config', 'G-Z2EZN4XEKM');
+
+    // 計測が失敗してもアプリの動作は止めない（オフライン利用や解析のブロック時）
+    function track(name, params) {
+      try { gtag('event', name, params || {}); } catch (e) {}
+    }
+  </script>
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Oswald:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -1712,6 +1726,7 @@
               setTimeout(() => showFukidashi('終了！お疲れ'), 1500);
               BGMManager.stop();
               document.getElementById('finishedOverlay').classList.add('show');
+              track('workout_complete', { rounds: totalRoundsCount, ended_by: 'timer' });
               updateTimerDisplay();
               return;
             }
@@ -1746,6 +1761,15 @@
         isRunning = true;
         resetFlags();
         showTimer();
+
+        track('timer_start', {
+          round_time: roundTime,
+          interval_time: intervalTime,
+          rounds: totalRoundsCount,
+          sound: soundEnabled ? 'on' : 'off',
+          cheer: cheerEnabled ? 'on' : 'off',
+          bgm: document.getElementById('bgmToggle').checked ? 'on' : 'off'
+        });
 
         if (soundEnabled) {
           SoundManager.gong();
@@ -1795,6 +1819,7 @@
             timeRemaining = 0;
             BGMManager.stop();
             document.getElementById('finishedOverlay').classList.add('show');
+            track('workout_complete', { rounds: totalRoundsCount, ended_by: 'skip' });
             if (soundEnabled) SoundManager.endGong();
           } else {
             phase = 'interval';
@@ -2182,7 +2207,10 @@
           const b = document.createElement('button');
           b.className = 'wc-seg-btn' + (val === sub ? ' active' : '');
           b.textContent = label;
-          b.addEventListener('click', () => setMode(style, val));
+          b.addEventListener('click', () => {
+            setMode(style, val);
+            track('weight_class_mode', { mode: style + '_' + sub });
+          });
           seg.appendChild(b);
         });
       }
@@ -2204,6 +2232,7 @@
       }
 
       function openWeight() {
+        track('weight_class_open', { mode: style + '_' + sub });
         settingsScreen.classList.add('hidden');
         weightScreen.classList.add('active');
         input.value = fmtW(weight);
@@ -2234,7 +2263,10 @@
       document.getElementById('btnWeightBack').addEventListener('click', closeWeight);
 
       document.querySelectorAll('#segStyle .wc-seg-btn').forEach((b) => {
-        b.addEventListener('click', () => setMode(b.dataset.style, sub));
+        b.addEventListener('click', () => {
+          setMode(b.dataset.style, sub);
+          track('weight_class_mode', { mode: style + '_' + sub });
+        });
       });
 
       // 保存値の復元
