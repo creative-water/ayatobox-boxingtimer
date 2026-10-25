@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ayatobox-v24';
+const CACHE_NAME = 'ayatobox-v25';
 
 const ASSETS_TO_CACHE = [
   './',
@@ -23,6 +23,10 @@ const ASSETS_TO_CACHE = [
   './assets/gong-end.mp3',
   './assets/bgm/bgm-01.mp3',
   './assets/bgm/bgm-02.mp3',
+  './assets/bgm/bgm-03.mp3',
+  './assets/bgm/jacket-01.svg',
+  './assets/bgm/jacket-02.svg',
+  './assets/bgm/jacket-03.svg',
   './assets/voice/fight.m4a',
   './assets/voice/finish.m4a',
   './assets/voice/interval.m4a',

@@ -221,6 +221,17 @@
       display: flex;
       flex-direction: column;
       gap: 10px;
+      /* BGMの曲選択を開くと縦が足りなくなる端末があるので、カード側だけスクロールさせる。
+         START と WEIGHT CLASS は下に残したいので .start-area は縮めない。 */
+      min-height: 0;
+      overflow-y: auto;
+      overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    /* 縮めるとカードの中身（特にジャケット）が潰れて切れるので、はみ出させてスクロールさせる */
+    .settings-cards > * {
+      flex-shrink: 0;
     }
 
     /* Setting card */
@@ -361,9 +372,78 @@
       transform: translateX(22px);
     }
 
+    /* BGM track picker ─ BGMをONにしたときだけ開く */
+    .bgm-picker {
+      background: var(--card);
+      border-radius: 16px;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 78px));
+      justify-content: center;
+      gap: 10px;
+      padding: 0 20px;
+      max-height: 0;
+      opacity: 0;
+      overflow: hidden;
+      transition: max-height 0.34s ease, opacity 0.24s ease, padding 0.34s ease;
+    }
+
+    .bgm-picker.show {
+      max-height: 260px;
+      opacity: 1;
+      padding: 12px 20px 13px;
+    }
+
+    .bgm-track {
+      border: none;
+      background: none;
+      padding: 0;
+      cursor: pointer;
+      display: block;
+      width: 100%;
+      font-family: 'Oswald', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .bgm-track-art {
+      display: block;
+      width: 100%;
+      height: auto;
+      border-radius: 12px;
+      box-shadow: 0 0 0 2px var(--card-border);
+      transition: box-shadow 0.2s ease, transform 0.15s ease;
+    }
+
+    .bgm-track:active .bgm-track-art { transform: scale(0.94); }
+
+    .bgm-track[aria-pressed="true"] .bgm-track-art {
+      box-shadow: 0 0 0 3px var(--red);
+    }
+
+    .bgm-track-title {
+      display: block;
+      margin-top: 6px;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      color: var(--text-secondary);
+      line-height: 1.2;
+      /* 「アッパーカット」が入りきらないので折り返す。3列とも同じ高さに揃う */
+      overflow-wrap: anywhere;
+      transition: color 0.2s ease;
+    }
+
+    .bgm-track[aria-pressed="true"] .bgm-track-title { color: var(--red); }
+
+    @media (min-height: 701px) and (max-height: 860px) {
+      .bgm-picker { grid-template-columns: repeat(3, minmax(0, 64px)); }
+      .bgm-picker.show { padding: 10px 20px 11px; gap: 8px; }
+      .bgm-track-title { margin-top: 5px; font-size: 9px; }
+    }
+
     /* Start button */
     .start-area {
       padding: 12px 0 0;
+      flex-shrink: 0;   /* カード側がスクロールしても START は常に見せる */
     }
 
     .btn-start {
@@ -984,6 +1064,9 @@
       .sc-value { font-size: 28px; min-width: 56px; }
       .sc-btn { width: 34px; height: 34px; }
       .toggle-card { padding: 10px 16px; }
+      .bgm-picker.show { padding: 10px 16px 12px; gap: 8px; }
+      .bgm-picker { grid-template-columns: repeat(3, minmax(0, 70px)); }
+      .bgm-track-title { font-size: 9px; }
       .btn-start { height: 56px; font-size: 22px; }
       .timer-ring-wrap { width: 240px; height: 240px; }
       .timer-digits { font-size: 40px; }
@@ -1001,6 +1084,9 @@
       .settings-cards { gap: 6px; }
       .setting-card { padding: 10px 16px; }
       .toggle-card { padding: 8px 16px; }
+      .bgm-picker.show { padding: 8px 16px 10px; gap: 8px; }
+      .bgm-picker { grid-template-columns: repeat(3, minmax(0, 62px)); }
+      .bgm-track-title { margin-top: 5px; font-size: 9px; }
       .start-area { padding: 8px 0 0; }
       .btn-start { height: 52px; font-size: 22px; }
       .timer-ring-wrap { width: 240px; height: 240px; margin: 6px 0; }
@@ -1146,6 +1232,9 @@
             <span class="toggle-slider"></span>
           </div>
         </div>
+
+        <!-- 曲の選択。中身は BGMManager の曲リストから生成する -->
+        <div class="bgm-picker" id="bgmPicker"></div>
 
       </div>
 
@@ -1437,33 +1526,55 @@
 
     // ===== BGM Manager =====
     const BGMManager = (() => {
-      const tracks = [
-        new Audio('assets/bgm/bgm-01.mp3'),
-        new Audio('assets/bgm/bgm-02.mp3'),
+      // 曲ごとに音量を補正する。アッパーカットは他の2曲より約9dB大きく録れているため、
+      // そのままだと曲を変えた瞬間に音量が跳ねる（測定値 RMS: .110 / .126 / .299）。
+      const TRACKS = [
+        { id: 'bgm-01', title: '8 COUNT',        src: 'assets/bgm/bgm-01.mp3', jacket: 'assets/bgm/jacket-01.svg', vol: 1.00 },
+        { id: 'bgm-02', title: 'UNDEFINED',      src: 'assets/bgm/bgm-02.mp3', jacket: 'assets/bgm/jacket-02.svg', vol: 0.87 },
+        { id: 'bgm-03', title: 'アッパーカット', src: 'assets/bgm/bgm-03.mp3', jacket: 'assets/bgm/jacket-03.svg', vol: 0.40 },
       ];
-      tracks.forEach(t => { t.preload = 'auto'; });
+      const STORAGE_KEY = 'ayatobox.bgmTrack';
+
+      const tracks = TRACKS.map(t => {
+        const a = new Audio(t.src);
+        a.preload = 'auto';
+        return a;
+      });
 
       let enabled = false;
-      let currentIndex = 0;
+      let selectedIndex = 0;   // 設定画面で選んだ曲
+      let currentIndex = 0;    // いま鳴っている曲
       let isPlaying = false;
 
+      // 前回選んだ曲を復元する
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        const i = TRACKS.findIndex(t => t.id === saved);
+        if (i !== -1) selectedIndex = i;
+      } catch (e) { /* 読めなくても1曲目で動く */ }
+
+      // 鳴らす瞬間にミュートを外し、曲ごとの音量を当てる
+      function startTrack(i) {
+        currentIndex = i;
+        const a = tracks[i];
+        a.muted = false;
+        a.volume = TRACKS[i].vol;
+        a.currentTime = 0;
+        a.play().catch(() => {});
+      }
+
+      // 1曲終わったら次の曲へ。最後まで行ったら先頭に戻る
       tracks.forEach((track, i) => {
         track.addEventListener('ended', () => {
           if (!enabled || !isPlaying) return;
-          currentIndex = (i + 1) % tracks.length;
-          tracks[currentIndex].muted = false;
-          tracks[currentIndex].currentTime = 0;
-          tracks[currentIndex].play().catch(() => {});
+          startTrack((i + 1) % tracks.length);
         });
       });
 
       function play() {
         if (!enabled) return;
         isPlaying = true;
-        currentIndex = 0;
-        tracks[0].muted = false;  // 解除時にミュートしたままなので、鳴らす瞬間に外す
-        tracks[0].currentTime = 0;
-        tracks[0].play().catch(() => {});
+        startTrack(selectedIndex);
       }
 
       function pause() {
@@ -1474,18 +1585,32 @@
       function resume() {
         if (!enabled || !isPlaying) return;
         tracks[currentIndex].muted = false;
+        tracks[currentIndex].volume = TRACKS[currentIndex].vol;
         tracks[currentIndex].play().catch(() => {});
       }
 
       function stop() {
         isPlaying = false;
         tracks.forEach(t => { t.pause(); t.currentTime = 0; });
-        currentIndex = 0;
+        currentIndex = selectedIndex;
       }
 
       function setEnabled(val) {
         enabled = val;
         if (!val) stop();
+      }
+
+      // 設定画面で曲を選ぶ。再生中に選び直したら、その場で切り替える
+      function select(i) {
+        if (i < 0 || i >= TRACKS.length) return;
+        selectedIndex = i;
+        try { localStorage.setItem(STORAGE_KEY, TRACKS[i].id); } catch (e) {}
+        if (isPlaying) {
+          tracks.forEach(t => { t.pause(); t.currentTime = 0; });
+          startTrack(i);
+        } else {
+          currentIndex = i;
+        }
       }
 
       // ユーザー操作中にBGMをミュート再生→即停止して解除しておく（ミュートは戻さない）
@@ -1501,7 +1626,12 @@
         });
       }
 
-      return { play, pause, resume, stop, setEnabled, prime, isEnabled: () => enabled };
+      return {
+        play, pause, resume, stop, setEnabled, prime, select,
+        isEnabled: () => enabled,
+        getTracks: () => TRACKS,
+        getSelected: () => selectedIndex,
+      };
     })();
 
     // ===== Fukidashi =====
@@ -1769,7 +1899,8 @@
           rounds: totalRoundsCount,
           sound: soundEnabled ? 'on' : 'off',
           cheer: cheerEnabled ? 'on' : 'off',
-          bgm: document.getElementById('bgmToggle').checked ? 'on' : 'off'
+          bgm: document.getElementById('bgmToggle').checked ? 'on' : 'off',
+          bgm_track: BGMManager.getTracks()[BGMManager.getSelected()].id
         });
 
         if (soundEnabled) {
@@ -1872,10 +2003,62 @@
         updateToggleStyle(e.target);
       });
 
+      // BGMの曲選択。ボタンは曲リストから組み立てるので曲名の二重管理が起きない
+      const bgmPickerEl = document.getElementById('bgmPicker');
+
+      function updateBgmPicker() {
+        const sel = BGMManager.getSelected();
+        bgmPickerEl.querySelectorAll('.bgm-track').forEach((b, i) => {
+          b.setAttribute('aria-pressed', String(i === sel));
+        });
+      }
+
+      function buildBgmPicker() {
+        BGMManager.getTracks().forEach((t, i) => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'bgm-track';
+          btn.setAttribute('aria-pressed', String(i === BGMManager.getSelected()));
+          const art = document.createElement('img');
+          art.className = 'bgm-track-art';
+          art.src = t.jacket;
+          art.alt = '';
+          art.width = 400;
+          art.height = 400;
+          const label = document.createElement('span');
+          label.className = 'bgm-track-title';
+          label.textContent = t.title;
+          btn.append(art, label);
+          btn.addEventListener('click', () => {
+            BGMManager.select(i);
+            updateBgmPicker();
+            track('bgm_select', { bgm_track: t.id, bgm_title: t.title });
+          });
+          bgmPickerEl.appendChild(btn);
+        });
+      }
+
+      // 曲を選ぶ場所なので、BGMがOFFのときは畳んでおく
+      function updateBgmPickerVisibility(scrollIntoView) {
+        bgmPickerEl.classList.toggle('show', bgmToggleEl.checked);
+        // 縦が狭い端末だと開いた先が隠れることがあるので、見える位置まで送る
+        if (scrollIntoView && bgmToggleEl.checked) {
+          setTimeout(() => {
+            try { bgmPickerEl.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch (e) {
+              bgmPickerEl.scrollIntoView(false);
+            }
+          }, 360);
+        }
+      }
+
       bgmToggleEl.addEventListener('change', (e) => {
         BGMManager.setEnabled(e.target.checked);
         updateToggleStyle(e.target);
+        updateBgmPickerVisibility(true);
       });
+
+      buildBgmPicker();
+      updateBgmPickerVisibility();
 
       // 初期状態を反映
       updateToggleStyle(soundToggleEl);
