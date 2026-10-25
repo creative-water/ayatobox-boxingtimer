@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ayatobox-v27';
+const CACHE_NAME = 'ayatobox-v28';
 
 const ASSETS_TO_CACHE = [
   './',
@@ -19,6 +19,7 @@ const ASSETS_TO_CACHE = [
   './assets/backbutton.png',
   './assets/skipbutton.png',
   './assets/stopbutton.png',
+  './assets/weightbutton.png',
   './assets/gong-start.mp3',
   './assets/gong-end.mp3',
   './assets/bgm/bgm-01.mp3',
