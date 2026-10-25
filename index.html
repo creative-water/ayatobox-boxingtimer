@@ -377,7 +377,7 @@
       background: var(--card);
       border-radius: 16px;
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 78px));
+      grid-template-columns: repeat(3, minmax(0, 92px));
       justify-content: center;
       gap: 10px;
       padding: 0 20px;
@@ -410,13 +410,15 @@
       height: auto;
       border-radius: 12px;
       box-shadow: 0 0 0 2px var(--card-border);
-      transition: box-shadow 0.2s ease, transform 0.15s ease;
+      opacity: 0.68;
+      transition: box-shadow 0.2s ease, transform 0.15s ease, opacity 0.2s ease;
     }
 
     .bgm-track:active .bgm-track-art { transform: scale(0.94); }
 
     .bgm-track[aria-pressed="true"] .bgm-track-art {
       box-shadow: 0 0 0 3px var(--red);
+      opacity: 1;
     }
 
     .bgm-track-title {
@@ -435,7 +437,7 @@
     .bgm-track[aria-pressed="true"] .bgm-track-title { color: var(--red); }
 
     @media (min-height: 701px) and (max-height: 860px) {
-      .bgm-picker { grid-template-columns: repeat(3, minmax(0, 64px)); }
+      .bgm-picker { grid-template-columns: repeat(3, minmax(0, 78px)); }
       .bgm-picker.show { padding: 10px 20px 11px; gap: 8px; }
       .bgm-track-title { margin-top: 5px; font-size: 9px; }
     }
@@ -1065,7 +1067,7 @@
       .sc-btn { width: 34px; height: 34px; }
       .toggle-card { padding: 10px 16px; }
       .bgm-picker.show { padding: 10px 16px 12px; gap: 8px; }
-      .bgm-picker { grid-template-columns: repeat(3, minmax(0, 70px)); }
+      .bgm-picker { grid-template-columns: repeat(3, minmax(0, 72px)); }
       .bgm-track-title { font-size: 9px; }
       .btn-start { height: 56px; font-size: 22px; }
       .timer-ring-wrap { width: 240px; height: 240px; }
@@ -1085,7 +1087,7 @@
       .setting-card { padding: 10px 16px; }
       .toggle-card { padding: 8px 16px; }
       .bgm-picker.show { padding: 8px 16px 10px; gap: 8px; }
-      .bgm-picker { grid-template-columns: repeat(3, minmax(0, 62px)); }
+      .bgm-picker { grid-template-columns: repeat(3, minmax(0, 68px)); }
       .bgm-track-title { margin-top: 5px; font-size: 9px; }
       .start-area { padding: 8px 0 0; }
       .btn-start { height: 52px; font-size: 22px; }
@@ -1529,9 +1531,9 @@
       // 曲ごとに音量を補正する。アッパーカットは他の2曲より約9dB大きく録れているため、
       // そのままだと曲を変えた瞬間に音量が跳ねる（測定値 RMS: .110 / .126 / .299）。
       const TRACKS = [
-        { id: 'bgm-01', title: '8 COUNT',        src: 'assets/bgm/bgm-01.mp3', jacket: 'assets/bgm/jacket-01.svg', vol: 1.00 },
-        { id: 'bgm-02', title: 'UNDEFINED',      src: 'assets/bgm/bgm-02.mp3', jacket: 'assets/bgm/jacket-02.svg', vol: 0.87 },
-        { id: 'bgm-03', title: 'アッパーカット', src: 'assets/bgm/bgm-03.mp3', jacket: 'assets/bgm/jacket-03.svg', vol: 0.40 },
+        { id: 'bgm-01', title: '8 COUNT',        src: 'assets/bgm/bgm-01.mp3', jacket: 'assets/bgm/jacket-01.jpg', vol: 1.00 },
+        { id: 'bgm-02', title: 'UNDEFINED',      src: 'assets/bgm/bgm-02.mp3', jacket: 'assets/bgm/jacket-02.jpg', vol: 0.87 },
+        { id: 'bgm-03', title: 'アッパーカット', src: 'assets/bgm/bgm-03.mp3', jacket: 'assets/bgm/jacket-03.jpg', vol: 0.40 },
       ];
       const STORAGE_KEY = 'ayatobox.bgmTrack';
 
@@ -2023,8 +2025,8 @@
           art.className = 'bgm-track-art';
           art.src = t.jacket;
           art.alt = '';
-          art.width = 400;
-          art.height = 400;
+          art.width = 512;
+          art.height = 512;
           const label = document.createElement('span');
           label.className = 'bgm-track-title';
           label.textContent = t.title;
