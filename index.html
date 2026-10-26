@@ -1850,6 +1850,7 @@
       const tracks = TRACKS.map(t => {
         const a = new Audio(t.src);
         a.preload = 'auto';
+        a.loop = true;   // 選んだ曲をそのまま繰り返す（曲送りはしない）
         return a;
       });
 
@@ -1874,14 +1875,6 @@
         a.currentTime = 0;
         a.play().catch(() => {});
       }
-
-      // 1曲終わったら次の曲へ。最後まで行ったら先頭に戻る
-      tracks.forEach((track, i) => {
-        track.addEventListener('ended', () => {
-          if (!enabled || !isPlaying) return;
-          startTrack((i + 1) % tracks.length);
-        });
-      });
 
       function play() {
         if (!enabled) return;
