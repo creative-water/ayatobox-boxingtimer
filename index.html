@@ -513,6 +513,199 @@
 
     .jacket-viewer-close:active { background: rgba(255, 255, 255, 0.18); }
 
+    /* フッターの「ホーム画面への追加方法」リンク */
+    .footer-inner {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .footer-link {
+      border: none;
+      background: none;
+      padding: 0;
+      cursor: pointer;
+      font-family: 'Oswald', sans-serif;
+      font-size: inherit;
+      letter-spacing: 1px;
+      color: var(--red);
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    .footer-link:active { opacity: 0.6; }
+
+    /* ホーム画面への追加方法 */
+    .install-help {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 160;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+    }
+
+    .install-help.show { display: flex; }
+
+    .install-card {
+      width: 100%;
+      max-width: 400px;
+      max-height: 88vh;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      background: var(--bg);
+      border-radius: 18px;
+      padding: 20px;
+      animation: jacketPop 0.24s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+    }
+
+    .install-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .install-title {
+      font-family: 'Oswald', sans-serif;
+      font-size: 17px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      color: var(--text);
+    }
+
+    .install-close {
+      flex-shrink: 0;
+      width: 30px;
+      height: 30px;
+      border: none;
+      border-radius: 50%;
+      background: var(--card);
+      color: var(--text-secondary);
+      font-size: 20px;
+      line-height: 1;
+      cursor: pointer;
+    }
+
+    .install-close:active { transform: scale(0.92); }
+
+    .install-lead {
+      font-family: 'Inter', sans-serif;
+      font-size: 12px;
+      line-height: 1.7;
+      color: var(--text-secondary);
+      margin-bottom: 12px;
+    }
+
+    .install-seg { margin-bottom: 14px; }
+
+    .install-steps {
+      list-style: none;
+      counter-reset: step;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .install-steps li {
+      counter-increment: step;
+      position: relative;
+      padding-left: 30px;
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      line-height: 1.6;
+      color: var(--text);
+    }
+
+    .install-steps li::before {
+      content: counter(step);
+      position: absolute;
+      left: 0;
+      top: 1px;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--red);
+      color: #fff;
+      font-family: 'Oswald', sans-serif;
+      font-size: 12px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .install-steps .ios-share {
+      width: 15px;
+      height: 15px;
+      vertical-align: -3px;
+      margin: 0 2px;
+      color: #0a84ff;
+    }
+
+    /* アプリ内ブラウザなど、先に解決が必要なときの注意書き */
+    .install-note {
+      background: #fff4f4;
+      border: 1px solid #f0d2d2;
+      border-radius: 12px;
+      padding: 12px 14px;
+      margin-bottom: 14px;
+      font-family: 'Inter', sans-serif;
+      font-size: 12px;
+      line-height: 1.7;
+      color: var(--text);
+    }
+
+    .install-note-title {
+      font-weight: 700;
+      color: var(--red-deep);
+      margin-bottom: 4px;
+    }
+
+    .install-note.done {
+      background: #f1f6f1;
+      border-color: #d3e3d3;
+    }
+
+    .install-note.done .install-note-title { color: #3b7a3b; }
+
+    .install-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .install-btn {
+      flex: 1 1 auto;
+      min-height: 40px;
+      padding: 0 16px;
+      border: none;
+      border-radius: 10px;
+      background: var(--red);
+      color: #fff;
+      font-family: 'Oswald', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      cursor: pointer;
+    }
+
+    .install-btn.sub {
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      color: var(--text);
+    }
+
+    .install-btn:active { transform: scale(0.97); }
+
     @media (min-height: 701px) and (max-height: 860px) {
       .bgm-picker { grid-template-columns: repeat(3, minmax(0, 78px)); }
       .bgm-picker.show { padding: 10px 20px 11px; gap: 8px; }
@@ -1428,7 +1621,28 @@
 
   </div>
 
-  <footer class="footer">&copy; AYATOBOX</footer>
+  <footer class="footer">
+    <div class="footer-inner">
+      <button class="footer-link" id="btnInstallHelp">ホーム画面への追加方法</button>
+      <span>&copy; AYATOBOX</span>
+    </div>
+  </footer>
+
+  <!-- ホーム画面への追加方法 -->
+  <div class="install-help" id="installHelp" role="dialog" aria-modal="true" aria-label="ホーム画面への追加方法">
+    <div class="install-card" id="installCard">
+      <div class="install-head">
+        <div class="install-title">ホーム画面への追加方法</div>
+        <button class="install-close" id="installHelpClose" aria-label="閉じる">&times;</button>
+      </div>
+      <p class="install-lead">ホーム画面に入れておくと、アイコンから一発で開けて全画面で使えます。電波がない場所でも動きます。</p>
+      <div class="wc-seg install-seg" id="installSeg">
+        <button class="wc-seg-btn" data-os="ios">iPhone の方</button>
+        <button class="wc-seg-btn" data-os="android">Android の方</button>
+      </div>
+      <div id="installBody"></div>
+    </div>
+  </div>
 
   <!-- ジャケットの拡大表示 -->
   <div class="jacket-viewer" id="jacketViewer" role="dialog" aria-modal="true" aria-label="ジャケットの拡大表示">
@@ -2196,6 +2410,8 @@
       });
 
       document.addEventListener('keydown', (e) => {
+        // 追加方法を開いている間はタイマー操作のショートカットを無効にする
+        if (document.getElementById('installHelp').classList.contains('show')) return;
         // ジャケットを拡大表示している間はEscで閉じるだけにする
         if (jacketViewer.classList.contains('show')) {
           if (e.key === 'Escape') closeJacketViewer();
@@ -2684,6 +2900,193 @@
       setTimeout(() => {
         document.body.classList.remove('intro');
       }, startDelay + 600);
+    })();
+
+    // ===== ホーム画面への追加方法 =====
+    (() => {
+      const ua = navigator.userAgent || '';
+      const isIOS = /iPhone|iPad|iPod/.test(ua) ||
+                    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      const isAndroid = /Android/.test(ua);
+
+      // SNSのアプリ内ブラウザからは「ホーム画面に追加」ができない。
+      // ここを案内しないと「追加できない」という詰まり方をする。
+      const inAppName =
+        /Line\//i.test(ua) ? 'LINE' :
+        /Instagram/i.test(ua) ? 'Instagram' :
+        /FBAN|FBAV|FB_IAB/i.test(ua) ? 'Facebook' :
+        /Twitter/i.test(ua) ? 'X（Twitter）' :
+        /TikTok|BytedanceWebview/i.test(ua) ? 'TikTok' : null;
+
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
+                           navigator.standalone === true;
+
+      // Androidは条件を満たすとブラウザ側がインストールを提案できる。その権利を預かっておく。
+      let installPrompt = null;
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        installPrompt = e;
+        if (currentOs === 'android') render();
+      });
+
+      const overlay = document.getElementById('installHelp');
+      const body = document.getElementById('installBody');
+      const seg = document.getElementById('installSeg');
+      let currentOs = isAndroid ? 'android' : 'ios';
+
+      const SHARE_ICON =
+        '<svg class="ios-share" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+        '<path d="M12 15V3"></path><path d="M8 7l4-4 4 4"></path>' +
+        '<path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"></path></svg>';
+
+      const el = (tag, cls, html) => {
+        const n = document.createElement(tag);
+        if (cls) n.className = cls;
+        if (html != null) n.innerHTML = html;
+        return n;
+      };
+
+      function note(cls, title, text) {
+        const n = el('div', 'install-note' + (cls ? ' ' + cls : ''));
+        n.append(el('div', 'install-note-title', title));
+        n.append(el('div', null, text));
+        return n;
+      }
+
+      function steps(items) {
+        const ol = el('ol', 'install-steps');
+        items.forEach(t => ol.append(el('li', null, t)));
+        return ol;
+      }
+
+      // URLをコピーできれば、どのアプリ内ブラウザからでも脱出できる
+      function copyUrlButton() {
+        const b = el('button', 'install-btn sub', 'URLをコピー');
+        b.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          const url = location.href.split('?')[0];
+          try {
+            await navigator.clipboard.writeText(url);
+            b.textContent = 'コピーしました';
+          } catch (err) {
+            // clipboardが使えない環境向けの保険
+            const ta = document.createElement('textarea');
+            ta.value = url;
+            ta.style.cssText = 'position:fixed;opacity:0';
+            document.body.appendChild(ta);
+            ta.select();
+            try { document.execCommand('copy'); b.textContent = 'コピーしました'; }
+            catch (e2) { b.textContent = 'コピーできませんでした'; }
+            document.body.removeChild(ta);
+          }
+          setTimeout(() => { b.textContent = 'URLをコピー'; }, 2000);
+        });
+        return b;
+      }
+
+      function render() {
+        body.innerHTML = '';
+        seg.querySelectorAll('.wc-seg-btn').forEach(b => {
+          b.classList.toggle('active', b.dataset.os === currentOs);
+        });
+
+        if (isStandalone) {
+          body.append(note('done', '追加済みです',
+            'すでにホーム画面のアイコンから起動しています。この画面を閉じてそのままお使いください。'));
+          return;
+        }
+
+        if (inAppName) {
+          const browser = currentOs === 'ios' ? 'Safari' : 'Chrome';
+          const n = note(null, inAppName + 'の中では追加できません',
+            inAppName + 'のブラウザには「ホーム画面に追加」がありません。' +
+            '先に' + browser + 'で開き直してください。' + inAppName +
+            'の画面右下などにある「…」から「' + browser + 'で開く」を選ぶか、下のボタンでURLをコピーして' +
+            browser + 'に貼り付けてください。');
+          const actions = el('div', 'install-actions');
+          if (/Line\//i.test(ua)) {
+            // LINEは外部ブラウザで開き直させる仕組みが用意されている
+            const b = el('button', 'install-btn', browser + 'で開く');
+            b.addEventListener('click', (e) => {
+              e.stopPropagation();
+              const base = location.href.split('?')[0].split('#')[0];
+              location.href = base + '?openExternalBrowser=1';
+            });
+            actions.append(b);
+          }
+          actions.append(copyUrlButton());
+          n.append(actions);
+          body.append(n);
+        }
+
+        if (currentOs === 'ios') {
+          body.append(steps([
+            'Safari でこのページを開きます。',
+            '画面の下にある共有ボタン' + SHARE_ICON + 'をタップします。',
+            'メニューを下にスクロールして「ホーム画面に追加」をタップします。',
+            '右上の「追加」をタップすると完了です。'
+          ]));
+          if (!isIOS && !inAppName) {
+            body.append(note(null, '補足',
+              'いまお使いの端末は iPhone ではないようです。手順はご自身の端末に合わせてご覧ください。'));
+          }
+        } else {
+          body.append(steps([
+            'Chrome でこのページを開きます。',
+            '画面右上の「︙」をタップします。',
+            '「ホーム画面に追加」または「アプリをインストール」をタップします。',
+            '確認画面で「追加」「インストール」をタップすると完了です。'
+          ]));
+          if (installPrompt) {
+            const actions = el('div', 'install-actions');
+            const b = el('button', 'install-btn', 'このままインストール');
+            b.addEventListener('click', async (e) => {
+              e.stopPropagation();
+              const p = installPrompt;
+              installPrompt = null;
+              b.disabled = true;
+              try {
+                p.prompt();
+                const res = await p.userChoice;
+                track('install_prompt_result', { outcome: res && res.outcome });
+              } catch (err) { /* 失敗しても手順の案内は残る */ }
+              render();
+            });
+            actions.append(b);
+            const wrap = el('div');
+            wrap.append(actions);
+            body.append(wrap);
+          }
+        }
+      }
+
+      function open() {
+        currentOs = isAndroid ? 'android' : 'ios';
+        render();
+        overlay.classList.add('show');
+        track('install_help_open', {
+          os: isAndroid ? 'android' : (isIOS ? 'ios' : 'other'),
+          in_app: inAppName || 'none',
+          standalone: isStandalone ? 'yes' : 'no'
+        });
+      }
+
+      function close() { overlay.classList.remove('show'); }
+
+      document.getElementById('btnInstallHelp').addEventListener('click', open);
+      document.getElementById('installHelpClose').addEventListener('click', close);
+      // 背景をタップしたら閉じる（カードの中のタップでは閉じない）
+      overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+      seg.addEventListener('click', (e) => {
+        const b = e.target.closest('.wc-seg-btn');
+        if (!b) return;
+        currentOs = b.dataset.os;
+        render();
+        track('install_help_tab', { os: currentOs });
+      });
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && overlay.classList.contains('show')) close();
+      });
     })();
   </script>
   <script>
