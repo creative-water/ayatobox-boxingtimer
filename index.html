@@ -1329,6 +1329,21 @@
     }
 
     /* ===== Responsive ===== */
+
+    /* ホーム画面から起動したPWAは、上下のバーの分だけ実際の高さが750px前後になる。
+       この帯で設定が収まりきらずBGMの行が切れていたので、各所を少しずつ詰める。
+       ※より狭い端末向けの max-height:700px はこの下にあり、そちらが優先される。 */
+    @media (max-height: 800px) {
+      .header { padding: 14px 24px 8px; }
+      .logo-image { width: 310px; }
+      .settings-cards { gap: 8px; }
+      .setting-card { padding: 12px 20px; }
+      .toggle-card { padding: 11px 20px; }
+      .start-area { padding: 8px 0 0; }
+      .btn-weight { max-width: 220px; }
+      .footer { padding: 8px; font-size: 11px; }
+    }
+
     @media (max-width: 380px) {
       .logo-image { width: 260px; }
       .setting-card { padding: 12px 16px; }
@@ -1356,6 +1371,7 @@
       .settings-cards { gap: 6px; }
       .setting-card { padding: 10px 16px; }
       .toggle-card { padding: 8px 16px; }
+      .btn-weight { max-width: 190px; }
       .bgm-picker.show { padding: 8px 16px 10px; gap: 8px; }
       .bgm-picker { grid-template-columns: repeat(3, minmax(0, 68px)); }
       .bgm-track-title { margin-top: 5px; font-size: 9px; }
@@ -2369,14 +2385,25 @@
       // 曲を選ぶ場所なので、BGMがOFFのときは畳んでおく
       function updateBgmPickerVisibility(scrollIntoView) {
         bgmPickerEl.classList.toggle('show', bgmToggleEl.checked);
-        // 縦が狭い端末だと開いた先が隠れることがあるので、見える位置まで送る
-        if (scrollIntoView && bgmToggleEl.checked) {
-          setTimeout(() => {
-            try { bgmPickerEl.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch (e) {
-              bgmPickerEl.scrollIntoView(false);
-            }
-          }, 360);
-        }
+        if (!scrollIntoView || !bgmToggleEl.checked) return;
+
+        // 縦が狭い端末だと開いた先が隠れるので、見える位置まで送る。
+        // 開ききる前に送ると途中の高さを基準にしてしまい中途半端な位置で止まるため、
+        // アニメーションの完了を待ってから動かす。ピッカーは一番下の要素なので末尾まで送れば全部見える。
+        const scroller = bgmPickerEl.parentElement;
+        let moved = false;
+        const go = () => {
+          if (moved) return;
+          moved = true;
+          bgmPickerEl.removeEventListener('transitionend', go);
+          try {
+            scroller.scrollTo({ top: scroller.scrollHeight, behavior: 'smooth' });
+          } catch (e) {
+            scroller.scrollTop = scroller.scrollHeight;
+          }
+        };
+        bgmPickerEl.addEventListener('transitionend', go);
+        setTimeout(go, 500);   // transitionend が来なかったときの保険
       }
 
       bgmToggleEl.addEventListener('change', (e) => {
