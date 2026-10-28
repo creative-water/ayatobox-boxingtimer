@@ -1361,6 +1361,9 @@
       .start-area { padding: 8px 0 0; }
       .btn-weight { max-width: 220px; }
       .footer { padding: 8px; font-size: 11px; }
+      .fukidashi-area { height: 74px; }
+      .fukidashi { font-size: 24px; min-width: 250px; max-width: 86vw; }
+      .fukidashi span { padding: 24px 52px 46px 42px; }
     }
 
     @media (max-width: 380px) {
@@ -1963,10 +1966,44 @@
     const fukidashiTextEl = document.getElementById('fukidashiText');
     let fukidashiTimer = null;
 
+    // 文字幅を測るためだけの、画面に出ない要素
+    const fukidashiRuler = document.createElement('span');
+    fukidashiRuler.setAttribute('aria-hidden', 'true');
+    fukidashiRuler.style.cssText =
+      'position:absolute;left:-9999px;top:0;white-space:nowrap;visibility:hidden;pointer-events:none;';
+    document.body.appendChild(fukidashiRuler);
+
     function showFukidashi(text) {
       clearTimeout(fukidashiTimer);
       fukidashiBubble.classList.remove('show');
       fukidashiTextEl.textContent = text;
+
+      // 「まだいける！諦めるな！」のような長い文言は、そのままだと吹き出しの絵から
+      // 最後の文字がはみ出す。折り返すと絵の高さに収まらないので、入りきらないときだけ
+      // 文字を小さくして収める。
+      // 画面に出ている吹き出しは scale で拡大縮小されており getBoundingClientRect が
+      // 当てにならないため、画面外に置いた計測用の要素で文字幅を測る。
+      fukidashiBubble.style.fontSize = '';   // 前の文言で縮めた分を戻してから測る
+      const bubbleStyle = getComputedStyle(fukidashiBubble);
+      const textStyle = getComputedStyle(fukidashiTextEl);
+      const available = parseFloat(bubbleStyle.maxWidth)
+        - parseFloat(textStyle.paddingLeft) - parseFloat(textStyle.paddingRight);
+
+      fukidashiRuler.style.fontFamily = textStyle.fontFamily;
+      fukidashiRuler.style.fontWeight = textStyle.fontWeight;
+      fukidashiRuler.style.letterSpacing = textStyle.letterSpacing;
+      fukidashiRuler.textContent = text;
+
+      let size = parseFloat(bubbleStyle.fontSize);
+      if (isFinite(available) && available > 0) {
+        for (let i = 0; i < 24 && size > 12; i++) {
+          fukidashiRuler.style.fontSize = size + 'px';
+          if (fukidashiRuler.offsetWidth <= available) break;
+          size -= 1;
+          fukidashiBubble.style.fontSize = size + 'px';
+        }
+      }
+
       void fukidashiBubble.offsetWidth;
       fukidashiBubble.classList.add('show');
       fukidashiTimer = setTimeout(() => {
